@@ -1,6 +1,6 @@
 # Sources and coverage
 
-Retrieved on 2026-10-10. Snapshot dates indicate upstream repository revisions, **not** a TEKKEN patch number. Official live verification remains blocked by the environment egress policy.
+Retrieved on 2026-10-10. Snapshot dates indicate upstream repository revisions, **not** a TEKKEN patch number. Official Japanese and Chinese sites were reachable during the 2026-10-10 story research; direct Wavu reads remain blocked. Verification below is scoped to the specified pages, not all live game data.
 
 ## Official references to verify
 
@@ -60,3 +60,15 @@ Additional research: [joshleichty/tekken8-guides](https://github.com/joshleichty
 These sheets explicitly record SSL before Leo `b+1,4`'s second hit for Anna, Asuka, Azucena, Bryan, Claudio, Devil Jin, Dragunov, Heihachi, Hwoarang, King, Law, Lee and Steve. The interface lists and links those defender-specific sources, and does not generalize to other characters. Source patch is unspecified. Historical 2026-03 records are presented with their own date, separately from the 2026-07 move snapshot.
 
 Wavu direct reads still returned HTTP 403 during this research. The official Chinese home page was reachable, but this redesign does not claim to have updated the official patch timeline or confirmed every current S3 release.
+
+## Story archive and relationship dossiers (2026-10-10)
+
+All 41 roster entries have original Chinese, English and Japanese multi-paragraph biographies, informed by directly retrieved Japanese official character pages: `https://tk8.tekken-official.jp/character/index.php?chara=<id>`. Each dossier carries its exact URL and retrieval date. This includes the newly published Kunimitsu background; availability of a biography is not evidence of an in-game release date. Original official prose and scraped HTML are not committed.
+
+The seven historical chapters summarize the official history section at https://tk8.tekken-official.jp/mode/story.php#history. The Japanese and Chinese story-mode pages establish the TEKKEN 8 premise and distinguish The Dark Awakens from Character Episode hypothetical endings: https://tk8.tekken-official.jp/sc/mode/story.php.
+
+The six TEKKEN 8 main-story chapters and Unforgotten Echoes chapter are original game-narrative summaries. The official web pages are background references, not a transcript verifying every ending or scene. This session did not perform a game playthrough. The standard Jin ending and alternate Kazuya ending are distinguished; the relationship tree marks Reina's revelation as a spoiler. Character Episode endings are explained as hypothetical and are not all individually catalogued. Clive's FINAL FANTASY XVI context is separated from TEKKEN canon.
+
+There are 69 total dossiers (41 roster fighters plus 28 related people, creatures or organizations) and 86 bidirectional edges with distinct labels for each direction. Supporting biographies are editorial summaries of published background and established game context, with explicit limits on unknown details. Edges referring to broader series context, such as Armor King–Marduk and Yoshimitsu–Bryan, are visibly identified as series/game narrative instead of verified official webpage statements. No parentage is inferred from a surname: Reina's mother is not asserted, Asuka–Jun's precise kinship is left unspecified, and Miary Zo's deity is not identified as Ogre. Every relationship exposes its references.
+
+Files: `src/lore/characters.js`, `supporting.js`, `relations.js`, `timeline.js` and `index.js`. `tests/lore.test.mjs` checks multilingual coverage, valid relationship endpoints, source references, chapter cast and sensitive relationship directions; `tests/lore-ui.mjs` exercises tree reading, rerooting, search, deep links, languages and mobile layouts.

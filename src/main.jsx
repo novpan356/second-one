@@ -25,7 +25,7 @@ import {
   Users,
   RotateCcw,
 } from "lucide-react";
-import roster from "../public/data/roster.json";
+import roster from "./roster.js";
 import { copy, pick } from "./i18n";
 import {
   editorial,
@@ -38,11 +38,19 @@ import {
 import { filterMoves, firstStartup, punishCandidates } from "./query";
 import "./style.css";
 import "./arena.css";
+import "./lore.css";
+import { loreCopy } from "./lore/copy.js";
 import {
   movementAssessment,
   movementMatches,
   movementCopy,
 } from "./movement.js";
+const ProfileLore = React.lazy(() =>
+  import("./Lore.jsx").then((m) => ({ default: m.ProfileLore })),
+);
+const StoryArchive = React.lazy(() =>
+  import("./Lore.jsx").then((m) => ({ default: m.StoryArchive })),
+);
 const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
 const portraitIds = new Set(roster.map((f) => f.id));
 const tabs = [
@@ -77,6 +85,14 @@ function routeFromHash() {
       page: "fighter",
       id: parts[1],
       tab: tabs.includes(parts[2]) ? parts[2] : "moves",
+    };
+  if (parts[0] === "story")
+    return {
+      page: "story",
+      section: ["main", "history", "extra", "people"].includes(parts[1])
+        ? parts[1]
+        : "main",
+      person: parts[1] === "person" ? parts[2] : null,
     };
   return {
     page: ["updates", "players", "lab"].includes(parts[0]) ? parts[0] : "home",
@@ -182,6 +198,12 @@ function App() {
     setSaved((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  const [storyMotion, setStoryMotion] = useState(0);
+  useEffect(() => {
+    const change = () => setStoryMotion((v) => v + 1);
+    window.addEventListener("atlas-lore-transition", change);
+    return () => window.removeEventListener("atlas-lore-transition", change);
+  }, []);
   const motionStarted = useRef(false);
   useEffect(() => {
     if (!motionStarted.current) {
@@ -203,7 +225,7 @@ function App() {
       ),
     ];
     return () => animations.forEach((a) => a.cancel());
-  }, [route, lang]);
+  }, [route, lang, storyMotion]);
   const context = { lang, t, saved, toggleSave, setSourceOpen };
   return (
     <>
@@ -235,12 +257,13 @@ function App() {
               <button
                 key={i}
                 className={
-                  route.page === ["home", "lab", "updates", "players"][i]
+                  route.page ===
+                  ["home", "lab", "updates", "players", "story"][i]
                     ? "current"
                     : ""
                 }
                 onClick={() =>
-                  navigate(["roster", "lab", "updates", "players"][i])
+                  navigate(["roster", "lab", "updates", "players", "story"][i])
                 }
               >
                 {name}
@@ -287,7 +310,7 @@ function App() {
         </button>
       </div>
       <div
-        key={`${route.page}-${route.id}-${route.tab}-${route.anchor}-${lang}`}
+        key={`${route.page}-${route.id}-${route.tab}-${route.anchor}-${route.section}-${route.person}-${lang}-${storyMotion}`}
         className="transition-strike"
         aria-hidden="true"
       >
@@ -301,6 +324,17 @@ function App() {
           <Fighter key={route.id} {...context} id={route.id} tab={route.tab} />
         ) : route.page === "lab" ? (
           <Lab {...context} />
+        ) : route.page === "story" ? (
+          <React.Suspense
+            fallback={
+              <div className="loading-panel">
+                <span className="loader" />
+                {t.load}
+              </div>
+            }
+          >
+            <StoryArchive {...context} route={route} />
+          </React.Suspense>
         ) : route.page === "updates" ? (
           <Updates {...context} />
         ) : (
@@ -442,6 +476,28 @@ function Home(ctx) {
         <span className="stats-note">{t.dataNote}</span>
       </div>
       <Roster {...ctx} />
+      <section className="home-story-feature wrap" data-reveal>
+        <div>
+          <span className="eyebrow">THE MISHIMA SAGA</span>
+          <h2>{loreCopy[lang].title}</h2>
+          <p>{loreCopy[lang].intro}</p>
+          <button
+            className="button dark-button"
+            onClick={() => navigate("story")}
+          >
+            {loreCopy[lang].storyButton}
+            <BookOpen size={17} />
+          </button>
+        </div>
+        <div className="home-story-vs" aria-hidden="true">
+          <Portrait fighter={roster.find((f) => f.id === "jin")} />
+          <b>
+            血<br />
+            FATE
+          </b>
+          <Portrait fighter={roster.find((f) => f.id === "kazuya")} />
+        </div>
+      </section>
       <section className="lab-feature" data-reveal>
         <img src={assetPath("art/lab.webp")} alt="" />
         <div className="lab-gradient" />
@@ -1619,7 +1675,7 @@ function Profile({ fighter, lang, t }) {
           <small>{t.bioNote}</small>
           <a
             className="text-button"
-            href={officialLinks.fighters}
+            href={`https://tk8.tekken-official.jp/character/index.php?chara=${fighter.id}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -1628,6 +1684,16 @@ function Profile({ fighter, lang, t }) {
           </a>
         </div>
       </div>
+      <React.Suspense
+        fallback={
+          <div className="loading-panel">
+            <span className="loader" />
+            {t.load}
+          </div>
+        }
+      >
+        <ProfileLore fighter={fighter} lang={lang} />
+      </React.Suspense>
     </>
   );
 }
