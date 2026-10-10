@@ -13,7 +13,10 @@ const page = await browser.newPage({
 });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-const base = process.env.ATLAS_TEST_URL || "http://127.0.0.1:5173";
+const base = (process.env.ATLAS_TEST_URL || "http://127.0.0.1:5173").replace(
+  /\/+$/,
+  "",
+);
 try {
   await page.goto(base);
   await page.locator(".fighter-card").first().waitFor();

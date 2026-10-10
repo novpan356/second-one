@@ -47,3 +47,7 @@ npm run test:ui
 41 份角色 JSON 在 `public/data`，不存在时不推断帧数；`gameVersion: null` 明确表示补丁未标定。`src/editorial.js` 管理自写三语摘要与选手关联，`src/i18n.js` 管理界面翻译。数据来源、图片来源及导入方式见 [SOURCES.md](SOURCES.md)。
 
 当前数据是静态快照，无账号系统、真实商城交易或实时 API。未来的云任务使用现有 checkout，不需要 Git worktree。
+
+## 在线发布
+
+已提供 GitHub Pages 自动发布工作流与子路径适配。首次启用方法、工作流入口与状态限制见 [DEPLOYMENT.md](DEPLOYMENT.md)。main 后续更新会触发自动构建和发布。另有准备好的 `gh-pages` 静态分支，可直接用作 Pages 发布来源。

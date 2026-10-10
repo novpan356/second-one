@@ -37,6 +37,7 @@ import {
 } from "./editorial";
 import { filterMoves, firstStartup, punishCandidates } from "./query";
 import "./style.css";
+const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
 const portraitIds = new Set(roster.map((f) => f.id));
 const tabs = [
   "moves",
@@ -289,7 +290,7 @@ function Portrait({ fighter, className = "", hero = false }) {
     >
       {hasArt ? (
         <img
-          src={`/art/${fighter.id}.webp`}
+          src={assetPath(`art/${fighter.id}.webp`)}
           alt={fighter.name}
           loading={hero ? "eager" : "lazy"}
           onError={() => setFailed(true)}
@@ -317,7 +318,11 @@ function Home(ctx) {
   return (
     <>
       <section className="hero">
-        <img className="hero-backdrop" src="/art/hero.webp" alt="" />
+        <img
+          className="hero-backdrop"
+          src={assetPath("art/hero.webp")}
+          alt=""
+        />
         <div className="hero-shade" />
         <div className="hero-copy">
           <div className="eyebrow light">
@@ -390,7 +395,7 @@ function Home(ctx) {
       </div>
       <Roster {...ctx} />
       <section className="lab-feature" data-reveal>
-        <img src="/art/lab.webp" alt="" />
+        <img src={assetPath("art/lab.webp")} alt="" />
         <div className="lab-gradient" />
         <div className="lab-feature-copy">
           <div className="eyebrow light">THE FIGHT LAB</div>
@@ -674,7 +679,7 @@ function Fighter(ctx) {
     const ctl = new AbortController();
     setData(null);
     setError(false);
-    fetch(`/data/${id}.json`, { signal: ctl.signal })
+    fetch(assetPath(`data/${id}.json`), { signal: ctl.signal })
       .then((r) => {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
