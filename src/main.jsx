@@ -26,6 +26,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import roster from "./roster.js";
+import { fighterArtPath } from "./art.js";
 import { copy, pick } from "./i18n";
 import {
   editorial,
@@ -360,7 +361,7 @@ function Portrait({ fighter, className = "", hero = false }) {
     >
       {hasArt ? (
         <img
-          src={assetPath(`art/${fighter.id}.webp`)}
+          src={fighterArtPath(fighter.id)}
           alt={fighter.name}
           loading={hero ? "eager" : "lazy"}
           onError={() => setFailed(true)}
@@ -387,6 +388,23 @@ function Home(ctx) {
   const total = roster.reduce((a, r) => a + r.count, 0);
   return (
     <>
+      <section className="sym-crew-banner" aria-label="SYM CREW">
+        <div className="sym-crew-ensemble" aria-hidden="true">
+          {roster.map((fighter) => (
+            <img
+              key={fighter.id}
+              data-character={fighter.id}
+              src={fighterArtPath(fighter.id)}
+              alt=""
+              decoding="async"
+            />
+          ))}
+        </div>
+        <div className="sym-crew-redwash" aria-hidden="true" />
+        <span className="sym-crew-slashes" aria-hidden="true" />
+        <h2>SYM CREW</h2>
+        <span className="sym-crew-edge" aria-hidden="true" />
+      </section>
       <section className="hero">
         <img
           className="hero-backdrop"

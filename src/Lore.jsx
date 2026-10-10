@@ -10,6 +10,7 @@ import {
   Info,
 } from "lucide-react";
 import roster from "./roster.js";
+import { fighterArtPath } from "./art.js";
 import {
   stories,
   storyName,
@@ -34,7 +35,7 @@ function Avatar({ id, large = false }) {
     <span className={`lore-avatar ${large ? "large" : ""}`} aria-hidden="true">
       {fighters.has(id) && !failed ? (
         <img
-          src={`${import.meta.env.BASE_URL}art/${id}.webp`}
+          src={fighterArtPath(id)}
           alt=""
           loading="lazy"
           onError={() => setFailed(true)}

@@ -1314,9 +1314,119 @@ select option {
   background: #315172;
   color: white;
 }
-html[lang="en"] .hero h1 { font-size:clamp(42px,5vw,76px); }
-html[lang="en"] .section-heading h2 { font-size:clamp(30px,3.5vw,48px); }
-@media (max-width:600px) {
-  html[lang="en"] .hero h1 { font-size:37px; letter-spacing:-1.5px; }
-  html[lang="en"] .section-heading h2 { font-size:28px; }
+html[lang="en"] .hero h1 {
+  font-size: clamp(42px, 5vw, 76px);
+}
+html[lang="en"] .section-heading h2 {
+  font-size: clamp(30px, 3.5vw, 48px);
+}
+@media (max-width: 600px) {
+  html[lang="en"] .hero h1 {
+    font-size: 37px;
+    letter-spacing: -1.5px;
+  }
+  html[lang="en"] .section-heading h2 {
+    font-size: 28px;
+  }
+}
+
+/* Crew masthead: the complete site roster, red photographic wash and hard cuts. */
+.sym-crew-banner {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: 248px;
+  overflow: hidden;
+  background: #d30b35;
+  border-top: 1px solid #ff516f;
+  border-bottom: 5px solid #080d18;
+}
+.sym-crew-ensemble {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  opacity: 0.32;
+  filter: grayscale(0.55) contrast(1.18);
+}
+.sym-crew-ensemble img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+.sym-crew-ensemble img:last-child {
+  grid-column: span 2;
+}
+.sym-crew-redwash {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(110deg, #d30b3578, #ef163c26 47%, #a5002678);
+}
+.sym-crew-banner::before,
+.sym-crew-banner::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background: #080d18;
+}
+.sym-crew-banner::before {
+  inset: 0 auto 0 0;
+  width: clamp(30px, 7vw, 120px);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.sym-crew-banner::after {
+  inset: 0 0 0 auto;
+  width: clamp(30px, 7vw, 120px);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.sym-crew-banner h2 {
+  margin: 0;
+  padding: 36px 28px;
+  font-size: clamp(56px, 8.2vw, 126px);
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 5px 5px 0 #080d1840;
+  transform: skewX(-5deg);
+}
+.sym-crew-slashes {
+  position: absolute;
+  left: 8%;
+  bottom: 22px;
+  width: 66px;
+  height: 12px;
+  background: repeating-linear-gradient(
+    115deg,
+    transparent 0 10px,
+    #ffffffb8 10px 15px,
+    transparent 15px 24px
+  );
+}
+.sym-crew-edge {
+  position: absolute;
+  right: 8%;
+  top: 22px;
+  width: 58px;
+  height: 5px;
+  background: var(--yellow);
+  transform: skewX(-30deg);
+}
+@media (max-width: 600px) {
+  .sym-crew-banner {
+    min-height: 180px;
+  }
+  .sym-crew-banner h2 {
+    font-size: clamp(44px, 12vw, 70px);
+    padding: 36px 16px;
+  }
 }
