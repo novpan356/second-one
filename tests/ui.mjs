@@ -13,6 +13,19 @@ const page = await browser.newPage({
 });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+async function loadPortraits(view) {
+  const images = view.locator(".fighter-card .portrait img");
+  await images.evaluateAll((imgs) =>
+    imgs.forEach((img) => {
+      img.loading = "eager";
+    }),
+  );
+  await view.waitForFunction(() =>
+    [...document.querySelectorAll(".fighter-card .portrait img")].every(
+      (img) => img.complete && img.naturalWidth > 0,
+    ),
+  );
+}
 const base = (process.env.ATLAS_TEST_URL || "http://127.0.0.1:5173").replace(
   /\/+$/,
   "",
@@ -20,7 +33,8 @@ const base = (process.env.ATLAS_TEST_URL || "http://127.0.0.1:5173").replace(
 try {
   await page.goto(base);
   await page.locator(".fighter-card").first().waitFor();
-  assert.equal(await page.locator(".fighter-card").count(), 12);
+  assert.equal(await page.locator(".fighter-card").count(), 41);
+  await loadPortraits(page);
   await page.screenshot({
     path: "/tmp/tekken-atlas-checks/home.png",
     fullPage: true,
@@ -67,6 +81,25 @@ try {
     .click();
   assert.ok((await page.locator(".move-table tbody tr").count()) > 0);
   await page.getByRole("tab", { name: "Sidestep", exact: true }).click();
+  await page.locator(".axis-table").waitFor();
+  await page.getByLabel("Sidestep response filter").selectOption("unknown");
+  assert.ok((await page.locator(".axis-table tbody tr").count()) > 0);
+  await page.getByLabel("Sidestep response filter").selectOption("all");
+  await page
+    .getByPlaceholder("Search opponent move or input, e.g. df+1")
+    .fill("b,f+2");
+  await page.getByLabel("Sidestep response filter").selectOption("tracking");
+  assert.ok((await page.locator(".axis-table tbody tr").count()) > 0);
+  await page.getByText("Read source excerpt", { exact: true }).first().click();
+  assert.ok(
+    (await page.locator(".axis-quote").first().textContent()).includes(
+      "left sidestep tracking",
+    ),
+  );
+  await page.locator(".axis-table .move-name").first().click();
+  await page.getByRole("dialog").waitFor();
+  await page.keyboard.press("Escape");
+  await page.locator(".axis-controls > summary").click();
   await page.locator(".sidestep-cards").waitFor();
   await page.getByRole("tab", { name: "Profile", exact: true }).click();
   await page.getByText("Jin’s mother", { exact: false }).count();
@@ -104,6 +137,7 @@ try {
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   );
+  await loadPortraits(mobile);
   await mobile.screenshot({
     path: "/tmp/tekken-atlas-checks/mobile.png",
     fullPage: true,
@@ -124,6 +158,59 @@ try {
   await mobile.locator(".move-name").first().click();
   await mobile.getByRole("dialog").waitFor();
   await mobile.keyboard.press("Escape");
+  await mobile.goto(base + "/#fighter/leo/movement");
+  await mobile.locator(".axis-table").waitFor();
+  assert.ok(
+    await mobile.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.goto(base + "/#fighter/leo/movement");
+  await page.locator(".axis-table tbody tr").first().waitFor();
+  await page.getByLabel("Sidestep response filter").selectOption("left");
+  assert.equal(await page.locator(".axis-table tbody tr").count(), 1);
+  assert.equal(await page.locator(".axis-defenders a").count(), 13);
+  assert.ok(
+    (await page.locator(".axis-table").textContent()).includes("before hit 2"),
+  );
+  await page.screenshot({
+    path: "/tmp/tekken-atlas-checks/movement.png",
+    fullPage: true,
+  });
+  await page.goto(base + "/#fighter/raven/movement");
+  await page.locator(".axis-table tbody tr").first().waitFor();
+  await page.getByLabel("Sidestep response filter").selectOption("left");
+  assert.ok((await page.locator(".axis-table").textContent()).includes("SWL"));
+  assert.ok(
+    (await page.locator(".axis-table").textContent()).includes("at range"),
+  );
+  const motion = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+    reducedMotion: "no-preference",
+  });
+  motion.on("pageerror", (e) => errors.push(e.message));
+  await motion.goto(base + "/#fighter/jin/moves");
+  await motion.locator(".move-table").waitFor();
+  await motion.getByRole("tab", { name: "横移", exact: true }).click();
+  await motion.locator(".axis-table").waitFor();
+  assert.ok(await motion.evaluate(() => document.getAnimations().length > 0));
+  await motion.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter(
+        (a) =>
+          !a.effect?.getTiming().iterations ||
+          a.effect.getTiming().iterations !== Infinity,
+      )
+      .every((a) => a.playState !== "running"),
+  );
+  assert.ok(
+    await motion.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await motion.close();
   await mobile.close();
   assert.deepEqual(errors, []);
   console.log(

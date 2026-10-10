@@ -37,6 +37,12 @@ import {
 } from "./editorial";
 import { filterMoves, firstStartup, punishCandidates } from "./query";
 import "./style.css";
+import "./arena.css";
+import {
+  movementAssessment,
+  movementMatches,
+  movementCopy,
+} from "./movement.js";
 const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
 const portraitIds = new Set(roster.map((f) => f.id));
 const tabs = [
@@ -176,6 +182,28 @@ function App() {
     setSaved((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  const motionStarted = useRef(false);
+  useEffect(() => {
+    if (!motionStarted.current) {
+      motionStarted.current = true;
+      return;
+    }
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const animations = [
+      ...Array.from(
+        document.querySelectorAll("main, .site-header, .footer"),
+      ).map((el, i) =>
+        el.animate(
+          [
+            { opacity: 0.45, transform: `translateX(${i === 1 ? -14 : 28}px)` },
+            { opacity: 1, transform: "translateX(0)" },
+          ],
+          { duration: 520, delay: i * 25, easing: "cubic-bezier(.16,1,.3,1)" },
+        ),
+      ),
+    ];
+    return () => animations.forEach((a) => a.cancel());
+  }, [route, lang]);
   const context = { lang, t, saved, toggleSave, setSourceOpen };
   return (
     <>
@@ -257,6 +285,14 @@ function App() {
           {t.allSources}
           <ChevronRight size={12} />
         </button>
+      </div>
+      <div
+        key={`${route.page}-${route.id}-${route.tab}-${route.anchor}-${lang}`}
+        className="transition-strike"
+        aria-hidden="true"
+      >
+        <i />
+        <i />
       </div>
       <main>
         {route.page === "home" ? (
@@ -352,6 +388,11 @@ function Home(ctx) {
             </button>
           </div>
         </div>
+        <div className="versus-lockup" aria-hidden="true">
+          <span>PLAYER 01</span>
+          <b>VS</b>
+          <span>PLAYER 02</span>
+        </div>
         <span className="hero-index">01 / THE FIGHTERS</span>
         <div className="hero-caption">
           JIN KAZAMA <span>VS</span> KAZUYA MISHIMA
@@ -370,6 +411,13 @@ function Home(ctx) {
           </button>
         </div>
       </section>
+      <div className="arena-ticker" aria-hidden="true">
+        <span>FRAME / ADVANTAGE</span>
+        <b>KNOW YOUR OPPONENT</b>
+        <span>MOVE / COUNTERMOVE</span>
+        <b>FIND YOUR EDGE</b>
+        <span>THE NEXT BATTLE</span>
+      </div>
       <div className="stats-bar">
         <div>
           <b>
@@ -449,7 +497,7 @@ function Roster(ctx) {
   const { t, lang, saved, toggleSave } = ctx;
   const [q, setQ] = useState("");
   const [season, setSeason] = useState("all");
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(48);
   const [fav, setFav] = useState(false);
   const filtered = useMemo(
     () =>
@@ -470,7 +518,7 @@ function Roster(ctx) {
       ),
     [q, season, fav, saved, lang],
   );
-  useEffect(() => setLimit(12), [q, season, fav]);
+  useEffect(() => setLimit(48), [q, season, fav]);
   return (
     <section className="roster-section wrap" id="roster">
       <div className="section-heading" data-reveal>
@@ -809,7 +857,7 @@ function Fighter(ctx) {
         ) : tab === "punish" ? (
           <Punish data={data} {...ctx} onMove={setMove} />
         ) : (
-          <Movement data={data} {...ctx} onMove={setMove} />
+          <Movement id={id} data={data} {...ctx} onMove={setMove} />
         )}
       </section>
       {move && (
@@ -1301,48 +1349,246 @@ function Punish({ data, t, onMove }) {
     </>
   );
 }
-function Movement({ data, t, onMove }) {
+function Movement({ id, data, t, lang, onMove }) {
   const [side, setSide] = useState("p1");
-  const moves = data.moves.filter((m) => /\bhoming\b/i.test(m.notes));
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("documented");
+  const [limit, setLimit] = useState(40);
+  const mt = movementCopy[lang];
+  const assessed = useMemo(
+    () =>
+      data.moves.map((move) => ({
+        move,
+        assessment: movementAssessment(move, id),
+      })),
+    [data, id],
+  );
+  const results = assessed.filter((row) => movementMatches(row, query, filter));
+  const documented = assessed.filter(
+    (row) => row.assessment.kind !== "unknown",
+  ).length;
+  const escapes = assessed.filter(
+    (row) => row.assessment.kind === "evade",
+  ).length;
+  useEffect(() => setLimit(40), [query, filter]);
   return (
     <>
-      <div className="eyebrow">THE THIRD DIMENSION</div>
-      <h2>{t.movementTitle}</h2>
-      <p className="content-subtitle">{t.movementDesc}</p>
-      <div className="segmented side-selector">
-        {["p1", "p2"].map((v) => (
+      <div className="eyebrow">AXIS / COUNTERPLAY</div>
+      <h2>{mt.title}</h2>
+      <p className="content-subtitle">{mt.intro}</p>
+      <div className="axis-summary">
+        <div>
+          <span>{mt.documented}</span>
+          <b>
+            {documented}
+            <small> / {data.moves.length}</small>
+          </b>
+        </div>
+        <div>
+          <span>{mt.escapeRecords}</span>
+          <b>{escapes}</b>
+        </div>
+        <div className="axis-conditions">
+          <Info size={20} />
+          <p>{mt.caution}</p>
+        </div>
+      </div>
+      <div className="move-toolbar axis-toolbar">
+        <label className="search-input wide">
+          <Search size={17} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={mt.search}
+            aria-label={mt.search}
+          />
+        </label>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          aria-label={mt.filter}
+        >
+          {[
+            "documented",
+            "all",
+            "evade",
+            "left",
+            "right",
+            "tracking",
+            "homing",
+            "unknown",
+          ].map((key) => (
+            <option key={key} value={key}>
+              {mt.filters[key]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="table-caption">
+        <span>
+          {results.length} {mt.records}
+        </span>
+        <span>{mt.perspective}</span>
+      </div>
+      <div className="table-scroll">
+        <table className="move-table axis-table">
+          <thead>
+            <tr>
+              <th>
+                {t.move} / {t.command}
+              </th>
+              <th>{mt.response}</th>
+              <th>{mt.conditions}</th>
+              <th>{mt.evidence}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.slice(0, limit).map(({ move, assessment: a }, i) => (
+              <tr key={`${move.id}-${i}`}>
+                <td>
+                  <button className="move-name" onClick={() => onMove(move)}>
+                    {move.name || move.command}
+                    <small>{move.section}</small>
+                  </button>
+                  <code>{move.command}</code>
+                </td>
+                <td>
+                  <span className={`axis-badge ${a.kind}`}>
+                    {mt.kinds[a.kind]}
+                  </span>
+                  <div className="axis-directions">
+                    {a.directions.map((d) => (
+                      <b key={d}>{d}</b>
+                    ))}
+                  </div>
+                  {a.kind === "unknown" && <small>{mt.noGuess}</small>}
+                </td>
+                <td>
+                  <p>
+                    {a.context
+                      ? a.context === "defenders"
+                        ? mt.contextsExtra
+                        : mt.contexts[a.context]
+                      : mt.contexts[a.kind]}
+                  </p>
+                  {a.afterBlock && (
+                    <b className="axis-window">
+                      {mt.afterBlock.replace("{n}", a.afterBlock)}
+                    </b>
+                  )}
+                  {a.defenders && (
+                    <div className="axis-defenders">
+                      <small>{mt.defenderScope}</small>
+                      {a.defenders.map((defender) => {
+                        const f = roster.find((r) => r.id === defender);
+                        return (
+                          <a
+                            key={defender}
+                            href={
+                              a.references?.find(
+                                (ref) => ref.defender === defender,
+                              )?.url
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {f ? localizedName(f, lang) : defender}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {a.tentative && (
+                    <span className="axis-tentative">{mt.tentative}</span>
+                  )}
+                </td>
+                <td>
+                  {a.evidence ? (
+                    <>
+                      <details>
+                        <summary>{mt.quote}</summary>
+                        <p className="axis-quote" lang="en">
+                          {a.evidence}
+                        </p>
+                      </details>
+                      <a
+                        className="axis-source"
+                        href={a.source || data.source}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {a.sourceLabel || `Wavu · ${data.snapshotDate}`}{" "}
+                        <ExternalLink size={12} />
+                      </a>
+                    </>
+                  ) : (
+                    <span>{mt.noEvidence}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!results.length && <Empty t={t} />}
+      {results.length > limit && (
+        <div className="load-more">
           <button
-            key={v}
-            className={side === v ? "active" : ""}
-            aria-pressed={side === v}
-            onClick={() => setSide(v)}
+            className="button outline-button"
+            onClick={() => setLimit(limit + 40)}
           >
-            {t[v]}
+            {t.more} {Math.min(limit, results.length)} / {results.length}
           </button>
-        ))}
+        </div>
+      )}
+      <div className="axis-method">
+        <h3>{mt.practiceTitle}</h3>
+        <p>{mt.practice}</p>
+        <a
+          className="text-button"
+          href={`https://wavu.wiki/t/${id
+            .split("_")
+            .map((s) => s[0].toUpperCase() + s.slice(1))
+            .join("_")}_counterplay`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {mt.moreResearch}
+          <ExternalLink size={14} />
+        </a>
       </div>
-      <div className="sidestep-cards">
-        <div>
-          <span>SSL</span>
-          <ArrowLeft size={40} />
-          <h3>{t.ssl}</h3>
-          <code>{side === "p1" ? "u → n" : "d → n"}</code>
+      <details className="axis-controls">
+        <summary>{mt.controls}</summary>
+        <div className="segmented side-selector">
+          {["p1", "p2"].map((v) => (
+            <button
+              key={v}
+              className={side === v ? "active" : ""}
+              aria-pressed={side === v}
+              onClick={() => setSide(v)}
+            >
+              {t[v]}
+            </button>
+          ))}
         </div>
-        <div className="sidestep-orbit">
-          <span />
-          <MoveHorizontal size={38} />
+        <div className="sidestep-cards">
+          <div>
+            <span>SSL / SWL</span>
+            <ArrowLeft size={30} />
+            <h3>{t.ssl}</h3>
+            <code>{side === "p1" ? "u → n / u,n,U" : "d → n / d,n,D"}</code>
+          </div>
+          <div className="sidestep-orbit">
+            <MoveHorizontal size={30} />
+          </div>
+          <div>
+            <span>SSR / SWR</span>
+            <ArrowRight size={30} />
+            <h3>{t.ssr}</h3>
+            <code>{side === "p1" ? "d → n / d,n,D" : "u → n / u,n,U"}</code>
+          </div>
         </div>
-        <div>
-          <span>SSR</span>
-          <ArrowRight size={40} />
-          <h3>{t.ssr}</h3>
-          <code>{side === "p1" ? "d → n" : "u → n"}</code>
-        </div>
-      </div>
-      <h3 className="subheading">{t.homing}</h3>
-      <p className="content-subtitle">{t.movementNote}</p>
-      <MoveTable moves={moves} t={t} onMove={onMove} />
-      {!moves.length && <Empty t={t} />}
+      </details>
       <DataLink data={data} t={t} />
     </>
   );

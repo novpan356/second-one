@@ -1,0 +1,104 @@
+{
+  "reviewedAt": "2026-10-10",
+  "patch": null,
+  "upstreamCommit": "979b0c5a20b9ba80e14d960b9fddb23a205e5c17",
+  "entries": {
+    "leo": {
+      "b+1,4": {
+        "kind": "evade",
+        "directions": [
+          "SSL"
+        ],
+        "context": "defenders",
+        "afterBlock": "1",
+        "beforeHit": "2",
+        "evidence": "evade Leo's b+1,4 — sidestep left 2nd hit",
+        "defenders": [
+          "anna",
+          "asuka",
+          "azucena",
+          "bryan",
+          "claudio",
+          "devil_jin",
+          "dragunov",
+          "heihachi",
+          "hwoarang",
+          "king",
+          "law",
+          "lee",
+          "steve"
+        ],
+        "references": [
+          {
+            "defender": "anna",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/anna.csv"
+          },
+          {
+            "defender": "asuka",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/asuka.csv"
+          },
+          {
+            "defender": "azucena",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/azucena.csv"
+          },
+          {
+            "defender": "bryan",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/bryan.csv"
+          },
+          {
+            "defender": "claudio",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/claudio.csv"
+          },
+          {
+            "defender": "devil_jin",
+            "quote": "evade Leo's b+1,4 — sidestep left the 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/devil-jin.csv"
+          },
+          {
+            "defender": "dragunov",
+            "quote": "evade Leo's b+1,4 — sidestep left the 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/dragunov.csv"
+          },
+          {
+            "defender": "heihachi",
+            "quote": "evade Leo's b+1,4 — ssl before 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/heihachi.csv"
+          },
+          {
+            "defender": "hwoarang",
+            "quote": "Leo's b+1,4 — sidestep left the 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/hwoarang.csv"
+          },
+          {
+            "defender": "king",
+            "quote": "evade Leo's b+1,4 — ssl before 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/king.csv"
+          },
+          {
+            "defender": "law",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/law.csv"
+          },
+          {
+            "defender": "lee",
+            "quote": "evade Leo's b+1,4 — sidestep left 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/lee.csv"
+          },
+          {
+            "defender": "steve",
+            "quote": "Leo's b+1,4 — sidestep left the 2nd hit",
+            "url": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/steve.csv"
+          }
+        ],
+        "sourceLabel": "Applay · mirrored 2026-03-07",
+        "snapshotDate": "2026-03-07",
+        "source": "https://github.com/joshleichty/tekken8-guides/blob/979b0c5a20b9ba80e14d960b9fddb23a205e5c17/data/applay-sheets/anna.csv"
+      }
+    }
+  }
+}

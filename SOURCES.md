@@ -48,3 +48,15 @@ Profiles are original editorial descriptions of established historical character
 ## Coverage totals
 
 41 fighter entries, 7,343 move records and 2,373 combo routes. Counts are snapshot entries and may include stance variants and partial string extensions. They do not imply a complete official move list or current-patch verification. The latest roster may have changed after the source snapshot. 36 datasets are structured frame snapshots and 5 are partial. 28 player profiles are supplied; live player verification is outstanding.
+
+## Move-specific sidestep counterplay (2026-10-10 redesign)
+
+`src/movement.js` reads **explicit** defender escape and tracking statements from the attributed move notes. It distinguishes escape directions from tracked directions; a move tracking left does **not** establish that it can be escaped right. Self sidesteps, stance cancels and sidestep startup costs are not defender counterplay. Unspecified and tentative source statements remain marked, including distance and blocked-hit conditions. No training-mode testing or current-patch verification was performed.
+
+The current 7,343 records yield 400 documented assessments: 339 both-side tracking records, 51 directional tracking records and 10 explicit escape records, across 36 character datasets. These are records, not unique guaranteed matchups. The remaining 6,943 entries show unknown directions and remain searchable; missing evidence is not inferred.
+
+Additional research: [joshleichty/tekken8-guides](https://github.com/joshleichty/tekken8-guides), pinned `979b0c5a20b9ba80e14d960b9fddb23a205e5c17` (2026-03-07), `data/applay-sheets/*.csv`. Its downloader identifies [Applay's Tekken 8 Library](https://docs.google.com/spreadsheets/d/e/2PACX-1vTsgbCJNSTKajMNlJvQleJOl0eTiEcV-PbeU0obDg1lsSqmz0lTtcD2k6NzfTPt7Db9Ua2dz1o_34Sv/pubhtml) as its source. We consulted the mirrored sheets; the current live spreadsheet was not verified. Only small factual command/counterplay excerpts are retained in `src/movement-research.json`, with a pinned per-sheet citation. No upstream app code, layout or full guide text was imported.
+
+These sheets explicitly record SSL before Leo `b+1,4`'s second hit for Anna, Asuka, Azucena, Bryan, Claudio, Devil Jin, Dragunov, Heihachi, Hwoarang, King, Law, Lee and Steve. The interface lists and links those defender-specific sources, and does not generalize to other characters. Source patch is unspecified. Historical 2026-03 records are presented with their own date, separately from the 2026-07 move snapshot.
+
+Wavu direct reads still returned HTTP 403 during this research. The official Chinese home page was reachable, but this redesign does not claim to have updated the official patch timeline or confirmed every current S3 release.
