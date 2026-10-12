@@ -11,7 +11,8 @@
     "test:ui": "node tests/ui.mjs",
     "test:lore-ui": "node tests/lore-ui.mjs",
     "test:community-ui": "node tests/community-ui.mjs",
-    "test:visitor-ui": "node tests/visitor-ui.mjs"
+    "test:visitor-ui": "node tests/visitor-ui.mjs",
+    "test:auth-ui": "node tests/auth-ui.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

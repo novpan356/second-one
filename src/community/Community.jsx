@@ -15,7 +15,12 @@ import {
 import roster from "../roster.js";
 import { localizedName } from "../editorial.js";
 import { fighterArtPath } from "../art.js";
-import { client } from "./client.js";
+import { client, backendUrl, publicKey } from "./client.js";
+import {
+  formatAuthError,
+  authCopy,
+  summarizeAuthSettings,
+} from "./auth-errors.js";
 import { communityCopy } from "./copy.js";
 import { useCommunity } from "./store.jsx";
 import { sortStandings, moveKey, textLength, cleanComment } from "./model.js";
@@ -47,7 +52,9 @@ export function AuthForm({ lang, onClose }) {
     c = communityCopy[lang],
     [mode, setMode] = useState(a.recovery ? "recover" : "login"),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [checking, setChecking] = useState(false),
+    [diagnostic, setDiagnostic] = useState("");
   useEffect(() => {
     if (a.recovery) setMode("recover");
   }, [a.recovery]);
@@ -94,10 +101,33 @@ export function AuthForm({ lang, onClose }) {
         if (error) throw error;
         onClose();
       }
-    } catch {
-      setMessage(c.error);
+    } catch (error) {
+      setMessage(formatAuthError(error, lang));
     } finally {
       setBusy(false);
+    }
+  };
+  const checkSettings = async () => {
+    if (!client || checking) return;
+    setChecking(true);
+    setDiagnostic("");
+    try {
+      const response = await fetch(`${backendUrl}/auth/v1/settings`, {
+        headers: { apikey: publicKey },
+        signal: AbortSignal.timeout(15000),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok)
+        throw {
+          code: data.code,
+          status: response.status,
+          message: data.message || data.msg || "",
+        };
+      setDiagnostic(summarizeAuthSettings(data, lang));
+    } catch (error) {
+      setDiagnostic(formatAuthError(error, lang));
+    } finally {
+      setChecking(false);
     }
   };
   return (
@@ -130,7 +160,7 @@ export function AuthForm({ lang, onClose }) {
       )}
       <form onSubmit={submit}>
         {mode === "register" && (
-          <label>
+          <label key="nickname">
             {c.nickname}
             <input
               name="nickname"
@@ -142,7 +172,7 @@ export function AuthForm({ lang, onClose }) {
           </label>
         )}
         {mode !== "recover" && (
-          <label>
+          <label key="email">
             {c.email}
             <input
               name="email"
@@ -154,7 +184,7 @@ export function AuthForm({ lang, onClose }) {
           </label>
         )}
         {mode !== "reset" && (
-          <label>
+          <label key="password">
             {mode === "recover" ? c.newPassword : c.password}
             <input
               name="password"
@@ -191,6 +221,23 @@ export function AuthForm({ lang, onClose }) {
           <p role="status" className="community-message">
             {message}
           </p>
+        )}
+        {a.backendConfigured && (
+          <div className="auth-diagnostics">
+            <button
+              type="button"
+              className="community-text-button"
+              disabled={checking || busy}
+              onClick={checkSettings}
+            >
+              {checking ? authCopy[lang].checking : authCopy[lang].check}
+            </button>
+            {diagnostic && (
+              <p role="status" className="community-message">
+                {diagnostic}
+              </p>
+            )}
+          </div>
         )}
       </form>
       <button

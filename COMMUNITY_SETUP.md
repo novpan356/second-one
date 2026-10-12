@@ -106,3 +106,22 @@ npm run test:community-ui
 ```
 
 新增浏览器验证：在前述两个开发服务器运行后执行 `npm run test:visitor-ui`，覆盖主页 41 个发布入口、本机持久化、顶部展开、两个模拟云游客之间赞踩改变热评及主页同步。实际云匿名登录仍需在你的 Supabase 项目开启并配置连接参数后验证。
+
+## 邮箱注册提示失败时
+
+登录/注册弹窗新增「检查邮箱服务配置」，在当前浏览器中只读请求 Supabase 的公开 Auth settings，不创建用户、不发送邮件。它验证连接、邮箱提供方/注册开关和邮箱自动确认设置；连接成功不代表 SMTP 发信或数据库触发器已经正常。
+
+注册失败现在显示具体分类、HTTP 状态和 SDK 可提供的错误代码。不要反复提交注册，以免触发邮件发送额度。按照实际提示处理：
+
+| 实际错误                                | 检查位置与处理                                                                                                         |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `email_address_not_authorized`          | Authentication 的 Email / SMTP Settings；默认邮件服务可能仅向项目团队成员邮箱发送，向其他访客发邮件需配置自己的 SMTP。 |
+| `over_email_send_rate_limit` / HTTP 429 | Auth 日志、邮件发送额度和 SMTP 限流；等待额度恢复后再试。                                                              |
+| `email_provider_disabled`               | Sign In / Providers → Email，启用 Email provider。                                                                     |
+| `signup_disabled`                       | Sign In / Providers，允许新用户注册。                                                                                  |
+| `weak_password`                         | 按项目实际密码复杂度规则设置密码，页面注册至少要求 8 位。                                                              |
+| 保存用户时数据库错误 / HTTP 500         | Authentication 的日志里查失败细节，核对 `profiles` 表和 `public.create_profile` 触发器。不要直接关闭行级权限。         |
+| `captcha_failed`                        | 项目启用了 CAPTCHA，但当前注册表单未接入验证组件；需要匹配的 CAPTCHA 前端接入。                                        |
+| 无法连接 / API 参数未授权               | 检查网络、项目是否暂停、Project URL 和 Publishable key 是否来自同一项目。                                              |
+
+将新提示的 HTTP 状态和错误代码提供给维护者即可，不要提供密码或 Secret key。项目后台菜单的名称随 Supabase 版本可能略有不同；通过 Authentication 的 Logs / 日志查看实际失败记录。
