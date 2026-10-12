@@ -789,3 +789,273 @@
   opacity: 0.55;
   cursor: wait;
 }
+/* Anonymous quick reactions and short comments below the fighter portraits. */
+.card-community {
+  margin: 8px 0 0;
+  padding: 9px 7px;
+  background: #112033;
+  border: 1px solid #2d405a;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    0 100%
+  );
+}
+.card-votes {
+  display: flex;
+  gap: 8px;
+}
+.card-votes button {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 5px 7px;
+  font-size: 10px;
+  border: 1px solid #324d70;
+  background: #14273c;
+}
+.card-votes button[aria-pressed="true"] {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.card-votes button:last-child[aria-pressed="true"] {
+  border-color: var(--red);
+  color: var(--red);
+}
+.card-top-comment {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 0;
+  color: #bed1ea;
+  font-size: 10px;
+  text-align: left;
+  min-width: 0;
+}
+.card-top-comment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.card-top-comment svg {
+  flex-shrink: 0;
+  color: var(--yellow);
+}
+.card-top-comment small {
+  color: var(--yellow);
+  font: 9px monospace;
+}
+.quick-comment > div {
+  display: flex;
+  border: 1px solid #335273;
+  background: #0a1625;
+  align-items: center;
+}
+.quick-comment input {
+  background: transparent;
+  border: 0;
+  width: 100%;
+  min-width: 0;
+  color: #eef5ff;
+  padding: 8px 5px;
+  font-size: 10px;
+  outline-offset: -2px;
+}
+.quick-comment input::placeholder {
+  color: #7994b4;
+}
+.quick-comment button {
+  padding: 7px;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-comment button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.quick-comment > small {
+  display: block;
+  font: 9px monospace;
+  color: #8da8cd;
+  margin: 5px 0 1px;
+  line-height: 1.6;
+}
+.quick-comment .too-long {
+  color: var(--red);
+}
+.fighter-thread-top {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.visitor-thread {
+  border: 1px solid #324e6d;
+  background: #132239;
+  border-top: 3px solid var(--red);
+  min-width: 0;
+}
+.visitor-thread summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 17px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+.visitor-thread summary::-webkit-details-marker {
+  display: none;
+}
+.thread-heading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--yellow);
+  white-space: nowrap;
+}
+.thread-preview {
+  flex: 1;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e1eafb;
+}
+.visitor-thread summary > small {
+  display: flex;
+  gap: 6px;
+  font: 11px monospace;
+  color: var(--blue);
+}
+.visitor-thread summary > svg {
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.visitor-thread details[open] summary > svg {
+  transform: rotate(180deg);
+}
+.thread-body {
+  padding: 0 22px 22px;
+  border-top: 1px solid #304962;
+}
+.thread-body > .quick-comment {
+  max-width: 600px;
+  margin: 20px 0;
+}
+.thread-body > .quick-comment input {
+  font-size: 14px;
+  padding: 13px;
+}
+.thread-body > .quick-comment button {
+  padding: 12px;
+}
+.thread-list {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+.thread-list > li {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #2e4664;
+  padding: 18px 0;
+}
+.thread-list > li > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.thread-list b {
+  font-size: 10px;
+  color: #88a9d3;
+}
+.thread-list p {
+  font-size: 16px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.thread-list small {
+  font: 10px monospace;
+  color: #7e98bc;
+}
+.thread-reactions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.thread-reactions button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #345171;
+  font-size: 11px;
+}
+.thread-reactions button[aria-pressed="true"] {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.thread-reactions button:nth-child(2)[aria-pressed="true"] {
+  color: var(--red);
+  border-color: var(--red);
+}
+.thread-reactions button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+@media (max-width: 600px) {
+  .visitor-thread summary {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .thread-heading {
+    font-size: 11px;
+  }
+  .thread-preview {
+    font-size: 12px;
+    order: 4;
+    flex-basis: 100%;
+  }
+  .visitor-thread summary > svg {
+    margin-left: auto;
+  }
+  .thread-body {
+    padding: 0 14px 16px;
+  }
+  .thread-list > li {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .thread-reactions {
+    justify-content: flex-end;
+  }
+  .card-community {
+    padding: 8px 5px;
+  }
+  .card-votes {
+    gap: 5px;
+  }
+  .card-top-comment {
+    font-size: 9px;
+  }
+  .quick-comment input {
+    font-size: 9px;
+  }
+  .fighter-thread-top {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+.home-community-layout .fighter-card-info {
+  min-height: 58px;
+  padding-bottom: 5px;
+}
+.home-community-layout .card-community {
+  margin-top: 4px;
+}

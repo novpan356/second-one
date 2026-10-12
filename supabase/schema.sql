@@ -126,4 +126,35 @@ $$;
 revoke all on function public.character_standings() from public;
 grant execute on function public.character_standings() to anon,authenticated;
 revoke all on function public.create_profile(),public.comment_timestamp() from public,anon,authenticated;
+-- Guest comments: append-only migration; existing comments are preserved.
+create table if not exists public.comment_reactions (
+ user_id uuid not null references auth.users(id) on delete cascade,
+ comment_user_id uuid not null,
+ fighter_id text not null,
+ vote smallint not null check(vote in (-1,1)),
+ primary key(user_id,comment_user_id,fighter_id),
+ foreign key(comment_user_id,fighter_id) references public.comments(user_id,fighter_id) on delete cascade
+);
+create index if not exists comment_reactions_target on public.comment_reactions(fighter_id,comment_user_id);
+alter table public.comment_reactions enable row level security;
+drop policy if exists comment_reactions_owner on public.comment_reactions;
+create policy comment_reactions_owner on public.comment_reactions for all to authenticated using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
+revoke all on public.comment_reactions from anon,authenticated;
+grant select,insert,update,delete on public.comment_reactions to authenticated;
+create or replace view public.comment_summaries with(security_barrier=true) as
+ select c.user_id,c.fighter_id,c.content,c.updated_at,p.display_name,
+ count(r.user_id) filter(where r.vote=1) as likes,
+ count(r.user_id) filter(where r.vote=-1) as dislikes
+ from public.comments c join public.profiles p on p.id=c.user_id
+ left join public.comment_reactions r on r.comment_user_id=c.user_id and r.fighter_id=c.fighter_id
+ group by c.user_id,c.fighter_id,c.content,c.updated_at,p.display_name;
+grant select on public.comment_summaries to anon,authenticated;
+create or replace function public.top_character_comments()
+returns setof public.comment_summaries language sql stable security definer set search_path='' as $$
+ select distinct on(fighter_id) * from public.comment_summaries
+ order by fighter_id,likes desc,dislikes asc,updated_at desc,user_id;
+$$;
+revoke all on function public.top_character_comments() from public;
+grant execute on function public.top_character_comments() to anon,authenticated;
+
 commit;

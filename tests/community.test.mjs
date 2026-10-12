@@ -8,6 +8,7 @@ import {
   normalizePlayer,
   ewgfProfile,
   moveKey,
+  sortComments,
 } from "../src/community/model.js";
 import { communityCopy } from "../src/community/copy.js";
 test("15 character comments use Unicode code points and reject empty, long and multiline messages", () => {
@@ -68,4 +69,12 @@ test("favorites distinguish different move entries that share an input command",
   const a = { id: "Jin-example-A", command: "1", section: "Standing" },
     b = { id: "Jin-example-B", command: "1", section: "Heat" };
   assert.notEqual(moveKey("jin", a), moveKey("jin", b));
+});
+
+test("highest-liked comment wins and downvotes resolve equal-like ties", () => {
+  const a = { user_id: "A", likes: 3, dislikes: 2, updated_at: "2026-01-01" },
+    b = { user_id: "B", likes: 3, dislikes: 0, updated_at: "2025-01-01" },
+    c = { user_id: "C", likes: 2, dislikes: 0, updated_at: "2026-10-01" };
+  assert.equal(sortComments([a, b, c])[0].user_id, "B");
+  assert.equal(sortComments([{ ...a, likes: 4 }, b, c])[0].user_id, "A");
 });

@@ -64,3 +64,14 @@ export function normalizePlayer(raw) {
 }
 export const ewgfProfile = (id) =>
   `https://www.ewgf.gg/player/${encodeURIComponent(id)}`;
+
+// Highest like count wins; fewer dislikes break a tie, then newest message.
+export function sortComments(rows) {
+  return [...rows].sort(
+    (a, b) =>
+      Number(b.likes || 0) - Number(a.likes || 0) ||
+      Number(a.dislikes || 0) - Number(b.dislikes || 0) ||
+      String(b.updated_at).localeCompare(String(a.updated_at)) ||
+      a.user_id.localeCompare(b.user_id),
+  );
+}

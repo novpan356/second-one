@@ -98,6 +98,7 @@ try {
     .join(".");
   const favorites = [],
     comments = [];
+  const reactions = [];
   let evaluation = null;
   let playerFailure = false;
   const page = await browser.newPage({
@@ -171,6 +172,19 @@ try {
         },
       ]);
     }
+    if (
+      u.pathname.endsWith("/rpc/top_character_comments") ||
+      u.pathname.endsWith("/comment_summaries")
+    )
+      return send(
+        comments.map((r) => ({
+          ...r,
+          display_name: r.profiles?.display_name,
+          likes: 0,
+          dislikes: 0,
+        })),
+      );
+    if (u.pathname.endsWith("/comment_reactions")) return send(reactions);
     if (u.pathname.endsWith("/rpc/character_standings"))
       return send(
         evaluation
@@ -289,11 +303,14 @@ try {
   );
   await page.getByRole("button", { name: "5 / 5", exact: true }).click();
   await expect(page.locator(".community-average")).toHaveText("5.00 / 5");
-  await page.locator(".comment-compose input").fill("🥊".repeat(16));
-  await expect(page.locator('.comment-compose [type="submit"]')).toBeDisabled();
-  await page.locator(".comment-compose input").fill("很棒🥊");
-  await page.locator('.comment-compose [type="submit"]').click();
-  await expect(page.locator(".comment-list p")).toHaveText("很棒🥊");
+  await page.locator(".visitor-thread summary").click();
+  await page.locator(".thread-body .quick-comment input").fill("🥊".repeat(16));
+  await expect(
+    page.locator('.thread-body .quick-comment [type="submit"]'),
+  ).toBeDisabled();
+  await page.locator(".thread-body .quick-comment input").fill("很棒🥊");
+  await page.locator('.thread-body .quick-comment [type="submit"]').click();
+  await expect(page.locator(".thread-list p")).toHaveText("很棒🥊");
   await page.screenshot({
     path: "/tmp/tekken-atlas-checks/community-cloud-fixture.png",
   });

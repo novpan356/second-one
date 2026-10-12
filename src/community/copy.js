@@ -11,7 +11,7 @@ export const communityCopy = {
     cloud: "云端已连接",
     guest: "本机访客模式",
     setup:
-      "云端账户服务尚未配置。当前收藏保存在本浏览器；登录、留言和公共评分待接入后启用。",
+      "云端账户尚未配置。收藏保存在本机，游客留言与评价也只在此浏览器可见。连接云端后可共享。",
     favorites: "我的收藏",
     fighter: "角色",
     move: "招式",
@@ -19,8 +19,8 @@ export const communityCopy = {
     import: "导入本机收藏",
     comment: "角色留言",
     send: "发布留言",
-    commentHint: "最多 15 字；每个账户每位角色保留一条，可修改或删除。",
-    loginHint: "登录后参与留言和评价",
+    commentHint: "15 字以内，每位游客每个角色保留一条，可改写或删除。",
+    loginHint: "可免登录留言与评价；登录可同步账户收藏",
     likes: "赞",
     dislikes: "踩",
     rating: "五星评分",
@@ -67,6 +67,16 @@ export const communityCopy = {
     refresh: "刷新排行榜",
     edit: "修改留言",
     ratingCount: "条评分",
+    visitor: "游客",
+    visitorPlaceholder: "免登录留言 · 15字以内",
+    hotComments: "角色热评",
+    firstComment: "留下第一条留言",
+    published: "已发布",
+    localPublished: "已保存到本机",
+    localNotice:
+      "当前为本机游客模式：赞踩和留言仅保存在此浏览器，其他访客暂不可见。连接云数据库后可共享。",
+    commentOrder: "赞数最高优先；同赞数时踩少优先，再按最新时间排序。",
+    moreComments: "加载更多留言",
   },
   en: {
     account: "My account",
@@ -80,7 +90,7 @@ export const communityCopy = {
     cloud: "Cloud connected",
     guest: "Local guest mode",
     setup:
-      "Cloud accounts are not configured. Favorites stay in this browser; sign-in, comments and shared ratings require the cloud connection.",
+      "Cloud accounts are not configured. Favorites, guest comments and ratings remain in this browser; connect cloud storage to share them.",
     favorites: "My favorites",
     fighter: "Fighters",
     move: "Moves",
@@ -89,8 +99,9 @@ export const communityCopy = {
     comment: "Fighter comments",
     send: "Post comment",
     commentHint:
-      "Up to 15 characters. One editable comment per account per fighter.",
-    loginHint: "Sign in to comment and rate",
+      "Up to 15 characters. One editable comment per visitor per fighter.",
+    loginHint:
+      "Comment and vote without signing in; sign in for account favorites",
     likes: "Like",
     dislikes: "Dislike",
     rating: "Five-star rating",
@@ -140,6 +151,17 @@ export const communityCopy = {
     refresh: "Refresh standings",
     edit: "Edit comment",
     ratingCount: "ratings",
+    visitor: "Visitor",
+    visitorPlaceholder: "Guest comment · up to 15 chars",
+    hotComments: "Fighter comments",
+    firstComment: "Leave the first comment",
+    published: "Published",
+    localPublished: "Saved in this browser",
+    localNotice:
+      "Local visitor mode: votes and comments are stored only in this browser. Other visitors cannot see them until cloud storage is connected.",
+    commentOrder:
+      "Most likes first; fewer dislikes break ties, then newest first.",
+    moreComments: "Load more comments",
   },
   ja: {
     account: "マイアカウント",
@@ -153,7 +175,7 @@ export const communityCopy = {
     cloud: "クラウド接続済み",
     guest: "端末ゲストモード",
     setup:
-      "クラウド未設定。お気に入りはこのブラウザに保存されます。ログイン、コメント、共有評価は接続後に有効になります。",
+      "クラウドアカウント未設定。お気に入り、ゲストのコメント・評価はこのブラウザに保存されます。クラウド接続後に共有できます。",
     favorites: "お気に入り",
     fighter: "キャラクター",
     move: "技",
@@ -161,8 +183,9 @@ export const communityCopy = {
     import: "端末の保存を取り込む",
     comment: "キャラクターコメント",
     send: "コメント投稿",
-    commentHint: "15文字以内。各キャラクターに1人1件、編集・削除可能。",
-    loginHint: "コメント・評価にはログインが必要",
+    commentHint: "15文字以内。各ゲストは1キャラクターに1件、編集・削除可能。",
+    loginHint:
+      "コメントと評価はログイン不要。アカウントのお気に入り同期にはログイン。",
     likes: "高評価",
     dislikes: "低評価",
     rating: "5つ星評価",
@@ -211,5 +234,15 @@ export const communityCopy = {
     refresh: "ランキングを更新",
     edit: "コメントを編集",
     ratingCount: "件の評価",
+    visitor: "ゲスト",
+    visitorPlaceholder: "ログイン不要 · 15文字以内",
+    hotComments: "キャラクターのコメント",
+    firstComment: "最初のコメントを書く",
+    published: "投稿しました",
+    localPublished: "この端末に保存しました",
+    localNotice:
+      "端末ゲストモード：評価とコメントはこのブラウザだけに保存され、他の訪問者には見えません。クラウド接続後に共有できます。",
+    commentOrder: "高評価の多い順。同数なら低評価が少ない順、次に新しい順。",
+    moreComments: "コメントを追加表示",
   },
 };

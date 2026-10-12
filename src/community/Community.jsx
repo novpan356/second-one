@@ -31,12 +31,14 @@ export function AccountButton({ lang }) {
     <button
       className="account-button"
       onClick={() =>
-        a.user ? (location.hash = "account") : a.setAuthOpen(true)
+        a.user && !a.user.is_anonymous
+          ? (location.hash = "account")
+          : a.setAuthOpen(true)
       }
-      aria-label={a.user ? c.account : c.login}
+      aria-label={a.user && !a.user.is_anonymous ? c.account : c.login}
     >
       <UserRound size={17} />
-      <span>{a.user ? c.account : c.login}</span>
+      <span>{a.user && !a.user.is_anonymous ? c.account : c.login}</span>
     </button>
   );
 }
@@ -212,7 +214,7 @@ export function MoveFavorite({ fighter, move, lang }) {
       className={"button move-save-button " + (selected ? "selected" : "")}
       aria-pressed={selected}
       disabled={
-        (a.user && !a.privateReady) ||
+        (a.user && !a.user.is_anonymous && !a.privateReady) ||
         a.pending.includes(`m:${moveKey(fighter, move)}`)
       }
       onClick={() => a.toggleMove(fighter, move)}
@@ -269,7 +271,7 @@ export function AccountPage({ lang }) {
         <Heart size={22} />
         {c.favorites}
       </h2>
-      {a.user && !a.privateReady ? (
+      {a.user && !a.user.is_anonymous && !a.privateReady ? (
         a.privateError ? (
           <p role="alert" className="community-error">
             {c.error}{" "}
@@ -409,7 +411,7 @@ export function Standings({ lang }) {
       </div>
       {(!a.backendConfigured || a.statsError) && (
         <p className="community-fineprint">
-          {a.statsError ? c.error : c.setup}
+          {a.statsError ? c.error : c.localNotice}
         </p>
       )}
       <ol>
@@ -451,70 +453,13 @@ export function Standings({ lang }) {
 export function FighterCommunity({ id, lang }) {
   const a = useCommunity(),
     c = communityCopy[lang],
-    [comments, setComments] = useState([]),
-    [text, setText] = useState(""),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(false);
-  const own = a.evaluations[id] || { vote: 0, stars: null },
+    own = a.evaluations[id] || { vote: 0, stars: null },
     stat = a.stats.find((s) => s.fighter_id === id) || {
       likes: 0,
       dislikes: 0,
       average: null,
       rating_count: 0,
     };
-  const load = async () => {
-    if (!client) return;
-    const { data, error } = await client
-      .from("comments")
-      .select("user_id,content,updated_at,profiles(display_name)")
-      .eq("fighter_id", id)
-      .order("updated_at", { ascending: false })
-      .limit(50);
-    if (error) {
-      setError(true);
-      return;
-    }
-    setError(false);
-    setComments(data || []);
-  };
-  useEffect(() => {
-    let stop = false;
-    setComments([]);
-    setText("");
-    setError(false);
-    if (client)
-      client
-        .from("comments")
-        .select("user_id,content,updated_at,profiles(display_name)")
-        .eq("fighter_id", id)
-        .order("updated_at", { ascending: false })
-        .limit(50)
-        .then(({ data, error }) => {
-          if (!stop) {
-            setError(Boolean(error));
-            setComments(data || []);
-          }
-        });
-    return () => {
-      stop = true;
-    };
-  }, [id, a.user?.id]);
-  const submit = async (e) => {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    try {
-      cleanComment(text);
-      if (await a.postComment(id, text)) {
-        setText("");
-        await load();
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
     <section className="wrap fighter-community">
       <div className="community-section-header">
@@ -529,30 +474,19 @@ export function FighterCommunity({ id, lang }) {
       </div>
       <div className="fighter-verdict">
         <div className="vote-buttons">
-          <button
-            aria-pressed={own.vote === 1}
-            className={own.vote === 1 ? "selected" : ""}
-            onClick={() => a.evaluate(id, own.vote === 1 ? 0 : 1, own.stars)}
-            disabled={
-              (a.user && !a.privateReady) || a.pending.includes(`e:${id}`)
-            }
-          >
-            <ThumbsUp size={20} />
-            {c.likes}
-            <b>{stat.likes}</b>
-          </button>
-          <button
-            aria-pressed={own.vote === -1}
-            className={own.vote === -1 ? "selected negative" : ""}
-            onClick={() => a.evaluate(id, own.vote === -1 ? 0 : -1, own.stars)}
-            disabled={
-              (a.user && !a.privateReady) || a.pending.includes(`e:${id}`)
-            }
-          >
-            <ThumbsDown size={20} />
-            {c.dislikes}
-            <b>{stat.dislikes}</b>
-          </button>
+          {[1, -1].map((v) => (
+            <button
+              key={v}
+              aria-pressed={own.vote === v}
+              className={own.vote === v ? "selected" : ""}
+              disabled={a.pending.includes("e:" + id)}
+              onClick={() => a.evaluate(id, own.vote === v ? 0 : v, own.stars)}
+            >
+              {v === 1 ? <ThumbsUp size={20} /> : <ThumbsDown size={20} />}{" "}
+              {v === 1 ? c.likes : c.dislikes}
+              <b>{v === 1 ? stat.likes : stat.dislikes}</b>
+            </button>
+          ))}
         </div>
         <div className="rating-control">
           <span>{c.rating}</span>
@@ -562,9 +496,7 @@ export function FighterCommunity({ id, lang }) {
                 aria-label={`${n} / 5`}
                 aria-pressed={own.stars === n}
                 key={n}
-                disabled={
-                  (a.user && !a.privateReady) || a.pending.includes(`e:${id}`)
-                }
+                disabled={a.pending.includes("e:" + id)}
                 onClick={() => a.evaluate(id, own.vote, n)}
               >
                 <Star
@@ -587,100 +519,9 @@ export function FighterCommunity({ id, lang }) {
           </small>
         </div>
       </div>
-      {!a.backendConfigured && <p className="community-notice">{c.setup}</p>}
-      <div className="comment-section">
-        <h3>{c.comment}</h3>
-        <form onSubmit={submit}>
-          <label htmlFor={`comment-${id}`} className="community-fineprint">
-            {c.commentHint}
-          </label>
-          <div className="comment-compose">
-            <input
-              id={`comment-${id}`}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={a.user ? c.comment : c.loginHint}
-              disabled={!a.user}
-              aria-describedby={`count-${id}`}
-            />
-            <span
-              id={`count-${id}`}
-              className={textLength(text) > 15 ? "too-long" : ""}
-            >
-              {textLength(text)} / 15
-            </span>
-            <button
-              type="submit"
-              className="button community-primary"
-              disabled={
-                busy || !a.user || !text.trim() || textLength(text) > 15
-              }
-            >
-              {busy ? c.loading : c.send}
-            </button>
-          </div>
-        </form>
-        {!a.user && (
-          <button
-            className="community-text-button"
-            onClick={() => a.setAuthOpen(true)}
-          >
-            {c.loginHint}
-            <ArrowUpRight size={15} />
-          </button>
-        )}
-        {error && (
-          <p role="alert" className="community-error">
-            {c.error}
-          </p>
-        )}
-        <ul className="comment-list">
-          {comments.map((row) => (
-            <li key={row.user_id}>
-              <UserRound size={22} />
-              <div>
-                <b>{row.profiles?.display_name || "FIGHTER"}</b>
-                <p>{row.content}</p>
-                <time>
-                  {new Date(row.updated_at).toLocaleDateString(
-                    { zh: "zh-CN", en: "en", ja: "ja" }[lang],
-                  )}
-                </time>
-              </div>
-              {a.user?.id === row.user_id && (
-                <div className="comment-actions">
-                  <button
-                    className="community-text-button"
-                    onClick={() => {
-                      setText(row.content);
-                      document.getElementById(`comment-${id}`).focus();
-                    }}
-                  >
-                    {c.edit}
-                  </button>
-                  <button
-                    aria-label={c.delete}
-                    className="icon-button"
-                    onClick={async () => {
-                      try {
-                        await a.deleteComment(id);
-                        await load();
-                      } catch {
-                        setError(true);
-                      }
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-        {!comments.length && !error && (
-          <p className="community-fineprint">{c.noComments}</p>
-        )}
-      </div>
+      {!a.backendConfigured && (
+        <p className="community-notice">{c.localNotice}</p>
+      )}
     </section>
   );
 }

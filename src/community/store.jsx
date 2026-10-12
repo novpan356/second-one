@@ -5,9 +5,15 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { client, backendConfigured } from "./client.js";
-import { cleanComment, moveKey, validEvaluation } from "./model.js";
+import {
+  cleanComment,
+  moveKey,
+  validEvaluation,
+  sortComments,
+} from "./model.js";
 const Context = createContext(null);
 const read = (key, fallback) => {
   try {
@@ -46,6 +52,98 @@ export function CommunityProvider({ children }) {
   const [pending, setPending] = useState([]);
   const uid = useRef(null),
     locks = useRef(new Set());
+  const [localId] = useState(() => {
+    try {
+      let id = localStorage.getItem("atlas-visitor-id");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("atlas-visitor-id", id);
+      }
+      return id;
+    } catch {
+      return crypto.randomUUID();
+    }
+  });
+  const [localComments, setLocalComments] = useState(() =>
+    read("atlas-guest-comments", []),
+  );
+  const [localReactions, setLocalReactions] = useState(() =>
+    read("atlas-guest-reactions", []),
+  );
+  const [topComments, setTopComments] = useState([]),
+    [commentVotes, setCommentVotes] = useState({}),
+    [commentRevision, setCommentRevision] = useState(0);
+  const visitorPromise = useRef(null),
+    evaluationVersion = useRef(0);
+  const localSummaries = useMemo(
+    () =>
+      localComments.map((r) => ({
+        ...r,
+        likes: localReactions.filter(
+          (v) =>
+            v.fighter_id === r.fighter_id &&
+            v.comment_user_id === r.user_id &&
+            v.vote === 1,
+        ).length,
+        dislikes: localReactions.filter(
+          (v) =>
+            v.fighter_id === r.fighter_id &&
+            v.comment_user_id === r.user_id &&
+            v.vote === -1,
+        ).length,
+      })),
+    [localComments, localReactions],
+  );
+  const localTop = useMemo(
+    () => [
+      ...new Map(
+        sortComments(localSummaries)
+          .map((r) => [r.fighter_id, r])
+          .reverse(),
+      ).values(),
+    ],
+    [localSummaries],
+  );
+  const refreshComments = useCallback(async () => {
+    if (client) {
+      try {
+        setTopComments(
+          result(await client.rpc("top_character_comments")) || [],
+        );
+      } catch {
+        setNotice("error");
+      }
+    }
+    setCommentRevision((n) => n + 1);
+  }, []);
+  useEffect(() => {
+    refreshComments();
+  }, [refreshComments]);
+  const ensureVisitor = async () => {
+    if (!client) return localId;
+    if (uid.current) return uid.current;
+    if (!visitorPromise.current)
+      visitorPromise.current = (async () => {
+        const existing = await client.auth.getSession();
+        if (existing.error) throw existing.error;
+        if (existing.data.session?.user) {
+          uid.current = existing.data.session.user.id;
+          setUser(existing.data.session.user);
+          return uid.current;
+        }
+        const { data, error } = await client.auth.signInAnonymously({
+          options: { data: { display_name: "游客" } },
+        });
+        if (error || !data.user)
+          throw error || Error("Guest session unavailable");
+        uid.current = data.user.id;
+        setUser(data.user);
+        return data.user.id;
+      })().finally(() => {
+        visitorPromise.current = null;
+      });
+    return visitorPromise.current;
+  };
   useEffect(() => {
     if (!client) return;
     const {
@@ -74,31 +172,81 @@ export function CommunityProvider({ children }) {
     refreshStats();
   }, [refreshStats]);
   useEffect(() => {
+    if (!client) return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        refreshComments();
+        refreshStats();
+      }
+    };
+    const timer = setInterval(refresh, 30000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [refreshComments, refreshStats]);
+  useEffect(() => {
     let cancelled = false;
     setPrivateReady(!user);
     setPrivateError(false);
-    setEvaluations({});
+    if (!client)
+      setEvaluations(
+        Object.fromEntries(
+          read("atlas-guest-evaluations", []).map((r) => [r.fighter_id, r]),
+        ),
+      );
+    else setEvaluations({});
+    if (!client)
+      setCommentVotes(
+        Object.fromEntries(
+          localReactions.map((r) => [
+            `${r.fighter_id}:${r.comment_user_id}`,
+            r.vote,
+          ]),
+        ),
+      );
+    else setCommentVotes({});
     if (!user) {
       setFighters(read("atlas-favorites", []));
       setMoves(read("atlas-move-favorites", []));
       return;
     }
-    setFighters([]);
-    setMoves([]);
+    if (!user.is_anonymous) {
+      setFighters([]);
+      setMoves([]);
+    }
+    const version = evaluationVersion.current;
     Promise.all([
       client.from("favorites").select("*").eq("user_id", user.id),
       client.from("evaluations").select("*").eq("user_id", user.id),
+      client.from("comment_reactions").select("*").eq("user_id", user.id),
     ])
       .then((rs) => {
-        const [f, e] = rs.map(result);
+        const [f, e, reactions] = rs.map(result);
         if (cancelled) return;
-        setFighters(f.filter((x) => x.kind === "fighter").map((x) => x.target));
-        setMoves(
-          f
-            .filter((x) => x.kind === "move")
-            .map((x) => ({ ...x.details, key: x.target })),
-        );
-        setEvaluations(Object.fromEntries(e.map((x) => [x.fighter_id, x])));
+        if (!user.is_anonymous)
+          setFighters(
+            f.filter((x) => x.kind === "fighter").map((x) => x.target),
+          );
+        if (!user.is_anonymous)
+          setMoves(
+            f
+              .filter((x) => x.kind === "move")
+              .map((x) => ({ ...x.details, key: x.target })),
+          );
+        if (version === evaluationVersion.current) {
+          setEvaluations(Object.fromEntries(e.map((x) => [x.fighter_id, x])));
+          setCommentVotes(
+            Object.fromEntries(
+              reactions.map((r) => [
+                `${r.fighter_id}:${r.comment_user_id}`,
+                r.vote,
+              ]),
+            ),
+          );
+        }
+
         setPrivateReady(true);
       })
       .catch(() => {
@@ -127,7 +275,7 @@ export function CommunityProvider({ children }) {
   const toggleFighter = (id) =>
     run("f:" + id, async () => {
       const selected = fighterFavorites.includes(id),
-        current = uid.current;
+        current = user && !user.is_anonymous ? uid.current : null;
       if (current) {
         if (!privateReady) return;
         result(
@@ -162,7 +310,7 @@ export function CommunityProvider({ children }) {
     run("m:" + moveKey(fighter, m), async () => {
       const key = moveKey(fighter, m),
         selected = moveFavorites.some((x) => x.key === key),
-        current = uid.current;
+        current = user && !user.is_anonymous ? uid.current : null;
       const record = {
         key,
         id: m.id,
@@ -203,60 +351,154 @@ export function CommunityProvider({ children }) {
     });
   const evaluate = (fighter, vote, stars) =>
     run("e:" + fighter, async () => {
-      if (!user) {
-        setAuthOpen(true);
-        return;
-      }
-      if (!privateReady) return;
       if (!validEvaluation(vote, stars)) throw Error("Invalid evaluation");
-      const current = uid.current;
-      if (vote === 0 && stars === null)
-        result(
-          await client
-            .from("evaluations")
-            .delete()
-            .eq("user_id", current)
-            .eq("fighter_id", fighter),
-        );
-      else
-        result(
-          await client
-            .from("evaluations")
-            .upsert(
-              { user_id: current, fighter_id: fighter, vote, stars },
-              { onConflict: "user_id,fighter_id" },
-            ),
-        );
-      if (uid.current !== current) return;
-      setEvaluations((prev) => ({ ...prev, [fighter]: { vote, stars } }));
+      const current = await ensureVisitor();
+      evaluationVersion.current++;
+      if (client) {
+        if (vote === 0 && stars === null)
+          result(
+            await client
+              .from("evaluations")
+              .delete()
+              .eq("user_id", current)
+              .eq("fighter_id", fighter),
+          );
+        else
+          result(
+            await client
+              .from("evaluations")
+              .upsert(
+                { user_id: current, fighter_id: fighter, vote, stars },
+                { onConflict: "user_id,fighter_id" },
+              ),
+          );
+        if (uid.current !== current) return;
+      }
+      evaluationVersion.current++;
+      setEvaluations((prev) => {
+        const next = {
+          ...prev,
+          [fighter]: { fighter_id: fighter, vote, stars },
+        };
+        if (vote === 0 && stars === null) delete next[fighter];
+        if (!client) write("atlas-guest-evaluations", Object.values(next));
+        return next;
+      });
       await refreshStats();
     });
   const postComment = async (fighter, text) => {
-    if (!user) {
-      setAuthOpen(true);
-      return false;
-    }
-    const content = cleanComment(text);
-    result(
-      await client
-        .from("comments")
-        .upsert(
-          { user_id: user.id, fighter_id: fighter, content },
-          { onConflict: "user_id,fighter_id" },
-        ),
-    );
+    const content = cleanComment(text),
+      current = await ensureVisitor();
+    if (client)
+      result(
+        await client
+          .from("comments")
+          .upsert(
+            { user_id: current, fighter_id: fighter, content },
+            { onConflict: "user_id,fighter_id" },
+          ),
+      );
+    else
+      setLocalComments((prev) => {
+        const next = [
+          ...prev.filter(
+            (r) => r.fighter_id !== fighter || r.user_id !== current,
+          ),
+          {
+            user_id: current,
+            fighter_id: fighter,
+            content,
+            display_name: "游客",
+            updated_at: new Date().toISOString(),
+          },
+        ];
+        write("atlas-guest-comments", next);
+        return next;
+      });
+    await refreshComments();
     return true;
   };
   const deleteComment = async (fighter) => {
-    if (!user) return;
-    result(
-      await client
-        .from("comments")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("fighter_id", fighter),
-    );
+    const current = client ? uid.current : localId;
+    if (!current) return;
+    if (client)
+      result(
+        await client
+          .from("comments")
+          .delete()
+          .eq("user_id", current)
+          .eq("fighter_id", fighter),
+      );
+    else {
+      setLocalComments((prev) => {
+        const next = prev.filter(
+          (r) => r.fighter_id !== fighter || r.user_id !== current,
+        );
+        write("atlas-guest-comments", next);
+        return next;
+      });
+      setLocalReactions((prev) => {
+        const next = prev.filter(
+          (r) => r.fighter_id !== fighter || r.comment_user_id !== current,
+        );
+        write("atlas-guest-reactions", next);
+        return next;
+      });
+    }
+    await refreshComments();
   };
+  const reactComment = (fighter, author, vote) =>
+    run(`r:${fighter}:${author}`, async () => {
+      if (![-1, 0, 1].includes(vote)) throw Error("Invalid reaction");
+      const current = await ensureVisitor();
+      evaluationVersion.current++;
+      if (client) {
+        if (vote === 0)
+          result(
+            await client
+              .from("comment_reactions")
+              .delete()
+              .eq("user_id", current)
+              .eq("comment_user_id", author)
+              .eq("fighter_id", fighter),
+          );
+        else
+          result(
+            await client.from("comment_reactions").upsert(
+              {
+                user_id: current,
+                comment_user_id: author,
+                fighter_id: fighter,
+                vote,
+              },
+              { onConflict: "user_id,comment_user_id,fighter_id" },
+            ),
+          );
+        if (uid.current !== current) return;
+      } else
+        setLocalReactions((prev) => {
+          const next = prev.filter(
+            (r) =>
+              !(
+                r.user_id === current &&
+                r.comment_user_id === author &&
+                r.fighter_id === fighter
+              ),
+          );
+          if (vote)
+            next.push({
+              user_id: current,
+              comment_user_id: author,
+              fighter_id: fighter,
+              vote,
+            });
+          write("atlas-guest-reactions", next);
+          return next;
+        });
+      evaluationVersion.current++;
+      setCommentVotes((prev) => ({ ...prev, [`${fighter}:${author}`]: vote }));
+      await refreshComments();
+    });
   const importFavorites = () =>
     run("import", async () => {
       if (!user || !privateReady) return;
@@ -309,7 +551,22 @@ export function CommunityProvider({ children }) {
         backendConfigured,
         fighterFavorites,
         moveFavorites,
-        stats,
+        stats: client
+          ? stats
+          : Object.values(evaluations).map((r) => ({
+              fighter_id: r.fighter_id,
+              likes: r.vote === 1 ? 1 : 0,
+              dislikes: r.vote === -1 ? 1 : 0,
+              average: r.stars,
+              rating_count: r.stars === null ? 0 : 1,
+              star_sum: r.stars || 0,
+            })),
+        topComments: client ? topComments : localTop,
+        localComments: localSummaries,
+        commentVotes,
+        commentRevision,
+        reactComment,
+        visitorId: client ? user?.id : localId,
         statsError,
         evaluations,
         authOpen,

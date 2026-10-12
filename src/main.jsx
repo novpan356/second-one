@@ -39,6 +39,7 @@ import {
 } from "./community/Community.jsx";
 import { communityCopy } from "./community/copy.js";
 import "./community/community.css";
+import { CardCommunity, VisitorThread } from "./community/VisitorThread.jsx";
 const OnlinePlayers = React.lazy(() => import("./community/OnlinePlayers.jsx"));
 import { copy, pick } from "./i18n";
 import {
@@ -244,7 +245,8 @@ function App() {
     saved,
     toggleSave,
     setSourceOpen,
-    canSave: !community.user || community.privateReady,
+    canSave:
+      !community.user || community.user.is_anonymous || community.privateReady,
     favoriteBusy: community.pending
       .filter((k) => k.startsWith("f:"))
       .map((k) => k.slice(2)),
@@ -621,6 +623,7 @@ function Home(ctx) {
   );
 }
 function Roster(ctx) {
+  const community = useCommunity();
   const { t, lang, saved, toggleSave } = ctx;
   const [q, setQ] = useState("");
   const [season, setSeason] = useState("all");
@@ -706,6 +709,11 @@ function Roster(ctx) {
           {t.onlySaved}
         </button>
       </div>
+      {!community.backendConfigured && (
+        <p className="community-fineprint roster-local-notice">
+          {communityCopy[lang].localNotice}
+        </p>
+      )}
       <div className="fighter-grid">
         {filtered.slice(0, limit).map((fighter, i) => (
           <article
@@ -759,6 +767,7 @@ function Roster(ctx) {
                 fill={saved.includes(fighter.id) ? "currentColor" : "none"}
               />
             </button>
+            <CardCommunity id={fighter.id} lang={lang} />
           </article>
         ))}
       </div>
@@ -880,6 +889,9 @@ function Fighter(ctx) {
   }, [data, autoMove, tab]);
   return (
     <>
+      <div className="wrap fighter-thread-top">
+        <VisitorThread id={id} lang={lang} />
+      </div>
       <section className="fighter-hero">
         <div className="wrap fighter-hero-inner">
           <div className="fighter-hero-copy">

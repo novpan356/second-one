@@ -92,6 +92,32 @@ test("database enforces private favorites, vote ownership, 15-character comments
       0,
     );
     await db.query(`insert into public.evaluations values($1,'jin',-1,3)`, [B]);
+    await db.query(
+      `insert into public.comments(user_id,fighter_id,content) values($1,'jin','Other comment')`,
+      [B],
+    );
+    await db.query(
+      `insert into public.comment_reactions values($1,$2,'jin',1)`,
+      [B, A],
+    );
+    await assert.rejects(
+      db.query(`insert into public.comment_reactions values($1,$2,'jin',1)`, [
+        A,
+        B,
+      ]),
+    );
+    await assert.rejects(
+      db.query(`insert into public.comment_reactions values($1,$2,'jin',0)`, [
+        B,
+        B,
+      ]),
+    );
+    await assert.rejects(
+      db.query(`insert into public.comment_reactions values($1,$2,'reina',1)`, [
+        B,
+        A,
+      ]),
+    );
     await db.exec(
       `reset role; set role anon; select set_config('request.jwt.claim.sub','',false);`,
     );
@@ -104,6 +130,12 @@ test("database enforces private favorites, vote ownership, 15-character comments
     assert.equal(Number(stats[0].dislikes), 1);
     assert.equal(Number(stats[0].average), 4);
     assert.equal(Number(stats[0].star_sum), 8);
+    await assert.rejects(db.query("select * from public.comment_reactions"));
+    const top = (
+      await db.query("select * from public.top_character_comments()")
+    ).rows;
+    assert.equal(top[0].user_id, A);
+    assert.equal(Number(top[0].likes), 1);
     const comments = (
       await db.query(
         "select c.content,p.display_name from public.comments c join public.profiles p on p.id=c.user_id",
