@@ -30,6 +30,10 @@ jobs:
       - name: Test data and queries
         run: npm test
       - name: Build static site
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_API_URL: ${{ vars.VITE_PLAYER_API_URL }}
         run: npm run build
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

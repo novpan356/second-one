@@ -1,6 +1,13 @@
 export const copy = {
   zh: {
-    nav: ["角色图鉴", "战斗实验室", "版本动态", "职业选手", "剧情档案"],
+    nav: [
+      "角色图鉴",
+      "战斗实验室",
+      "版本动态",
+      "职业选手",
+      "剧情档案",
+      "在线玩家",
+    ],
     explore: "探索角色",
     heroEyebrow: "TEKKEN 8 · INDEPENDENT FIGHTING COMPANION",
     hero1: "读懂对手。",
@@ -162,7 +169,14 @@ export const copy = {
     versionUnknown: "补丁版本未标定",
   },
   en: {
-    nav: ["Fighters", "Fight lab", "Updates", "Pro players", "Story archive"],
+    nav: [
+      "Fighters",
+      "Fight lab",
+      "Updates",
+      "Pro players",
+      "Story archive",
+      "Online players",
+    ],
     explore: "Explore fighters",
     heroEyebrow: "TEKKEN 8 · INDEPENDENT FIGHTING COMPANION",
     hero1: "Read the fight.",
@@ -330,7 +344,14 @@ export const copy = {
     versionUnknown: "Patch unspecified",
   },
   ja: {
-    nav: ["キャラクター", "練習ラボ", "アップデート", "プロ選手", "ストーリー"],
+    nav: [
+      "キャラクター",
+      "練習ラボ",
+      "アップデート",
+      "プロ選手",
+      "ストーリー",
+      "オンライン",
+    ],
     explore: "キャラクターを見る",
     heroEyebrow: "TEKKEN 8 · INDEPENDENT FIGHTING COMPANION",
     hero1: "相手を読む。",

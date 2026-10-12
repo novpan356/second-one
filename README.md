@@ -55,3 +55,7 @@ npm run test:lore-ui
 ## 在线发布
 
 已提供 GitHub Pages 自动发布工作流与子路径适配。首次启用方法、工作流入口与状态限制见 [DEPLOYMENT.md](DEPLOYMENT.md)。main 后续更新会触发自动构建和发布。另有准备好的 `gh-pages` 静态分支，可直接用作 Pages 发布来源。
+
+## 社区与在线玩家
+
+新增三语在线玩家页面、登录/注册/密码重置界面、账户收藏页、招式收藏、15 字以内角色留言、赞踩/五星评价和主页侧栏排行。多人数据使用 Supabase，尚未配置时提供本机收藏并明确显示云服务未启用。建库与 GitHub 构建变量步骤见 [COMMUNITY_SETUP.md](COMMUNITY_SETUP.md)。EWGF 当前 API 受网络访问限制，在线查询提供真实外站入口和待配置的授权数据适配器，不宣称已接通实时积分。

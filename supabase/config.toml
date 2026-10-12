@@ -1,0 +1,3 @@
+[functions.player-data]
+# This function returns public game records, never account data. No JWT required.
+verify_jwt = false

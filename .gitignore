@@ -3,3 +3,7 @@ dist/
 .playwright/
 test-results/
 *.log
+.env
+.env.*
+!.env.example
+supabase/.temp/

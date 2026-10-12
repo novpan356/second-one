@@ -27,6 +27,19 @@ import {
 } from "lucide-react";
 import roster from "./roster.js";
 import { fighterArtPath } from "./art.js";
+import { CommunityProvider, useCommunity } from "./community/store.jsx";
+import {
+  AccountButton,
+  AuthForm,
+  AccountPage,
+  MoveFavorite,
+  Standings,
+  FighterCommunity,
+  CommunityNotice,
+} from "./community/Community.jsx";
+import { communityCopy } from "./community/copy.js";
+import "./community/community.css";
+const OnlinePlayers = React.lazy(() => import("./community/OnlinePlayers.jsx"));
 import { copy, pick } from "./i18n";
 import {
   editorial,
@@ -85,6 +98,13 @@ function routeFromHash() {
     return {
       page: "fighter",
       id: parts[1],
+      autoMove: (() => {
+        try {
+          return decodeURIComponent(parts[3] || "");
+        } catch {
+          return "";
+        }
+      })(),
       tab: tabs.includes(parts[2]) ? parts[2] : "moves",
     };
   if (parts[0] === "story")
@@ -96,7 +116,9 @@ function routeFromHash() {
       person: parts[1] === "person" ? parts[2] : null,
     };
   return {
-    page: ["updates", "players", "lab"].includes(parts[0]) ? parts[0] : "home",
+    page: ["updates", "players", "lab", "online", "account"].includes(parts[0])
+      ? parts[0]
+      : "home",
     anchor: parts[0] === "roster" ? "roster" : null,
   };
 }
@@ -113,10 +135,8 @@ function App() {
   );
   const [route, setRoute] = useState(routeFromHash);
   const routeRef = useRef(route);
-  const [saved, setSaved] = useState(() => {
-    const v = storageGet("atlas-favorites", []);
-    return Array.isArray(v) ? v : [];
-  });
+  const community = useCommunity();
+  const { fighterFavorites: saved, toggleFighter: toggleSave } = community;
   const [mobile, setMobile] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const t = copy[lang];
@@ -175,11 +195,6 @@ function App() {
     } catch {}
   }, [lang]);
   useEffect(() => {
-    try {
-      localStorage.setItem("atlas-favorites", JSON.stringify(saved));
-    } catch {}
-  }, [saved]);
-  useEffect(() => {
     const observer = new IntersectionObserver(
       (es) =>
         es.forEach((e) => {
@@ -195,10 +210,6 @@ function App() {
       .forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [route, lang]);
-  const toggleSave = (id) =>
-    setSaved((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
   const [storyMotion, setStoryMotion] = useState(0);
   useEffect(() => {
     const change = () => setStoryMotion((v) => v + 1);
@@ -227,7 +238,17 @@ function App() {
     ];
     return () => animations.forEach((a) => a.cancel());
   }, [route, lang, storyMotion]);
-  const context = { lang, t, saved, toggleSave, setSourceOpen };
+  const context = {
+    lang,
+    t,
+    saved,
+    toggleSave,
+    setSourceOpen,
+    canSave: !community.user || community.privateReady,
+    favoriteBusy: community.pending
+      .filter((k) => k.startsWith("f:"))
+      .map((k) => k.slice(2)),
+  };
   return (
     <>
       <header className="site-header">
@@ -259,12 +280,16 @@ function App() {
                 key={i}
                 className={
                   route.page ===
-                  ["home", "lab", "updates", "players", "story"][i]
+                  ["home", "lab", "updates", "players", "story", "online"][i]
                     ? "current"
                     : ""
                 }
                 onClick={() =>
-                  navigate(["roster", "lab", "updates", "players", "story"][i])
+                  navigate(
+                    ["roster", "lab", "updates", "players", "story", "online"][
+                      i
+                    ],
+                  )
                 }
               >
                 {name}
@@ -272,6 +297,7 @@ function App() {
             ))}
           </nav>
           <div className="nav-right">
+            <AccountButton lang={lang} />
             <div className="language-switch" aria-label="Language">
               {[
                 ["zh", "中"],
@@ -322,7 +348,13 @@ function App() {
         {route.page === "home" ? (
           <Home {...context} />
         ) : route.page === "fighter" ? (
-          <Fighter key={route.id} {...context} id={route.id} tab={route.tab} />
+          <Fighter
+            key={route.id}
+            {...context}
+            id={route.id}
+            tab={route.tab}
+            autoMove={route.autoMove}
+          />
         ) : route.page === "lab" ? (
           <Lab {...context} />
         ) : route.page === "story" ? (
@@ -336,6 +368,14 @@ function App() {
           >
             <StoryArchive {...context} route={route} />
           </React.Suspense>
+        ) : route.page === "online" ? (
+          <React.Suspense
+            fallback={<div className="loading-panel">{t.load}</div>}
+          >
+            <OnlinePlayers lang={lang} />
+          </React.Suspense>
+        ) : route.page === "account" ? (
+          <AccountPage lang={lang} />
         ) : route.page === "updates" ? (
           <Updates {...context} />
         ) : (
@@ -343,6 +383,16 @@ function App() {
         )}
       </main>
       <Footer {...context} />
+      <CommunityNotice lang={lang} />
+      {community.authOpen && (
+        <Modal
+          title={communityCopy[lang].account}
+          t={t}
+          onClose={() => community.setAuthOpen(false)}
+        >
+          <AuthForm lang={lang} onClose={() => community.setAuthOpen(false)} />
+        </Modal>
+      )}
       {sourceOpen && (
         <Modal onClose={() => setSourceOpen(false)} title={t.sources} t={t}>
           <SourcePanel {...context} />
@@ -493,7 +543,10 @@ function Home(ctx) {
         </div>
         <span className="stats-note">{t.dataNote}</span>
       </div>
-      <Roster {...ctx} />
+      <div className="home-community-layout">
+        <Roster {...ctx} />
+        <Standings lang={lang} />
+      </div>
       <section className="home-story-feature wrap" data-reveal>
         <div>
           <span className="eyebrow">THE MISHIMA SAGA</span>
@@ -698,6 +751,7 @@ function Roster(ctx) {
               className="save-button"
               aria-label={`${saved.includes(fighter.id) ? t.unfavorite : t.favorite} ${localizedName(fighter, lang)}`}
               aria-pressed={saved.includes(fighter.id)}
+              disabled={!ctx.canSave || ctx.favoriteBusy.includes(fighter.id)}
               onClick={() => toggleSave(fighter.id)}
             >
               <Heart
@@ -791,7 +845,7 @@ function Lab(ctx) {
   );
 }
 function Fighter(ctx) {
-  const { id, tab, lang, t, saved, toggleSave } = ctx;
+  const { id, tab, lang, t, saved, toggleSave, autoMove } = ctx;
   const fighter = roster.find((r) => r.id === id);
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
@@ -816,6 +870,14 @@ function Fighter(ctx) {
     return () => ctl.abort();
   }, [id, attempt]);
   useEffect(() => setMove(null), [id, tab]);
+  useEffect(() => {
+    if (data && autoMove && tab === "moves") {
+      const found = data.moves.find(
+        (m) => m.id === autoMove || m.command === autoMove,
+      );
+      if (found) setMove(found);
+    }
+  }, [data, autoMove, tab]);
   return (
     <>
       <section className="fighter-hero">
@@ -843,6 +905,7 @@ function Fighter(ctx) {
               }
               onClick={() => toggleSave(id)}
               aria-pressed={saved.includes(id)}
+              disabled={!ctx.canSave || ctx.favoriteBusy.includes(id)}
             >
               <Heart
                 size={16}
@@ -934,9 +997,10 @@ function Fighter(ctx) {
           <Movement id={id} data={data} {...ctx} onMove={setMove} />
         )}
       </section>
+      <FighterCommunity id={id} lang={lang} />
       {move && (
         <Modal onClose={() => setMove(null)} title={t.details} t={t}>
-          <MoveDetail move={move} data={data} {...ctx} />
+          <MoveDetail move={move} data={data} fighter={id} {...ctx} />
         </Modal>
       )}
     </>
@@ -1232,11 +1296,12 @@ function InputCode({ text, t }) {
     </>
   );
 }
-function MoveDetail({ move: m, data, t }) {
+function MoveDetail({ move: m, data, t, fighter, lang }) {
   return (
     <>
       <span className="eyebrow">{m.section}</span>
       <h3 className="modal-move-title">{m.name || m.command}</h3>
+      <MoveFavorite fighter={fighter} move={m} lang={lang} />
       <InputCode text={m.command} t={t} />
       <InputDiagram command={m.command} t={t} />
       <div className="frame-grid">
@@ -2156,4 +2221,8 @@ function Footer({ t, setSourceOpen }) {
   );
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <CommunityProvider>
+    <App />
+  </CommunityProvider>,
+);
