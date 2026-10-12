@@ -93,9 +93,18 @@ export function CardCommunity({ id, lang }) {
         onClick={() => (location.hash = `fighter/${id}/moves`)}
         title={top?.content || c.noComments}
       >
-        <MessageSquare size={11} />
-        <span>{top?.content || c.firstComment}</span>
-        {top && <small>+{top.likes}</small>}
+        <span className="card-comment-heading">
+          <MessageSquare size={13} />
+          <span>{c.hotComments}</span>
+          {top && (
+            <small>
+              <ThumbsUp size={10} /> {top.likes}
+            </small>
+          )}
+        </span>
+        <span className="card-comment-text">
+          {top?.content || c.firstComment}
+        </span>
       </button>
       <QuickComment id={id} lang={lang} />
     </div>

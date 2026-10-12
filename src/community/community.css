@@ -1059,3 +1059,136 @@
 .home-community-layout .card-community {
   margin-top: 4px;
 }
+
+/* Give every 15-character hot comment its own readable subtitle panel. */
+.home-community-layout .fighter-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 24px 14px;
+}
+.home-community-layout .fighter-card {
+  display: flex;
+  flex-direction: column;
+}
+.home-community-layout .fighter-card-image {
+  height: 180px;
+}
+.home-community-layout .save-button {
+  top: 191px;
+}
+.home-community-layout .card-community {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  margin-top: 4px;
+  background: #111f32;
+}
+.card-top-comment {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  text-align: left;
+  min-height: 108px;
+  border: 1px solid #69542c;
+  border-left: 3px solid var(--yellow);
+  background: linear-gradient(135deg, #29263a, #14263d);
+  flex: 1;
+}
+.card-top-comment:hover {
+  border-color: var(--yellow);
+  background: linear-gradient(135deg, #363049, #193451);
+}
+.card-top-comment .card-comment-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--yellow);
+  white-space: normal;
+  overflow: visible;
+}
+.card-comment-heading > span {
+  flex: 1;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+.card-top-comment .card-comment-heading small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font: 10px monospace;
+  color: var(--yellow);
+}
+.card-top-comment .card-comment-text {
+  display: block;
+  flex: none;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.65;
+  letter-spacing: 0.15px;
+  color: #fff;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.card-community .quick-comment {
+  margin-top: auto;
+}
+.card-community .quick-comment input {
+  font-size: 11px;
+  padding: 10px 7px;
+}
+.card-community .quick-comment button {
+  padding: 10px;
+}
+@media (max-width: 1200px) {
+  .home-community-layout .fighter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 800px) {
+  .home-community-layout .fighter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px 12px;
+  }
+  .home-community-layout .fighter-card-image {
+    height: 155px;
+  }
+  .home-community-layout .save-button {
+    top: 166px;
+  }
+}
+@media (max-width: 600px) {
+  .home-community-layout .fighter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+  .home-community-layout .fighter-card-image {
+    height: 180px;
+  }
+  .home-community-layout .save-button {
+    top: 191px;
+  }
+  .home-community-layout .card-community {
+    padding: 10px;
+  }
+  .card-top-comment {
+    padding: 11px;
+    min-height: 110px;
+  }
+  .card-top-comment .card-comment-text {
+    font-size: 15px;
+  }
+  .card-comment-heading > span {
+    font-size: 10px;
+  }
+}
