@@ -25,7 +25,7 @@ The Pages workflow builds the web assets with the existing repository Supabase p
 - Five destinations in the bottom dock; other sections remain in the top menu.
 - Compact fighter header and horizontally scrollable section tabs.
 - Move rows become portrait cards: command, attack level, damage/startup, block/hit/CH frames, then outcome captions.
-- Touch-sized controls, scrollable bottom-sheet dialogs, safe-area/keyboard support and an offline notice.
+- Touch-sized controls, scrollable bottom-sheet dialogs, safe-area/keyboard support and an offline notice driven by native network connectivity (browser previews use browser connectivity).
 - Android back closes a dialog first, then returns through navigation history. External HTTPS references open separately.
 - Guest identities and local favorites are specific to each browser/app install. Signed-in favorites use the existing cloud account.
 - Email confirmation/password-reset links use the existing HTTPS website, not an unregistered localhost callback. Confirmation opens in the browser; then sign in from the app. Password recovery completes on the website. This preview does not claim app-link handling.

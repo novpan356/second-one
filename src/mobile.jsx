@@ -19,7 +19,22 @@ export function MobileNavigation({route,lang,navigate}) {
 }
 export function OfflineNotice({lang}) {
   const [offline,setOffline]=useState(!navigator.onLine);
-  useEffect(()=>{const sync=()=>setOffline(!navigator.onLine);window.addEventListener('online',sync);window.addEventListener('offline',sync);return()=>{window.removeEventListener('online',sync);window.removeEventListener('offline',sync);};},[]);
+  useEffect(()=>{
+    if(isNativeApp) {
+      let alive=true, listener;
+      import('@capacitor/network').then(async({Network})=>{
+        const handle=await Network.addListener('networkStatusChange', status=>{if(alive)setOffline(!status.connected);});
+        if(!alive){await handle.remove();return;}
+        listener=handle;
+        const status=await Network.getStatus();
+        if(alive)setOffline(!status.connected);
+      }).catch(()=>{if(alive)setOffline(!navigator.onLine);});
+      return()=>{alive=false;listener?.remove();};
+    }
+    const sync=()=>setOffline(!navigator.onLine);
+    window.addEventListener('online',sync);window.addEventListener('offline',sync);
+    return()=>{window.removeEventListener('online',sync);window.removeEventListener('offline',sync);};
+  },[]);
   return offline && <div className="offline-notice" role="status"><WifiOff size={17}/>{mobileCopy[lang].offline}</div>;
 }
 export function AppDownload({lang,full=false,navigate}) {

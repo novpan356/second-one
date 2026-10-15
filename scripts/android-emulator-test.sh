@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -eu
+adb shell cmd connectivity airplane-mode enable
 adb shell svc wifi disable
 adb shell svc data disable
 native_log=/tmp/sym-native-test.log
