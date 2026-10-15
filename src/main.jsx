@@ -52,9 +52,12 @@ import {
 } from "./editorial";
 import { filterMoves, firstStartup, punishCandidates } from "./query";
 import { moveEffects, effectCopy } from "./move-effects.js";
+import { MobileNavigation, AppDownload, OfflineNotice, initializeNative } from "./mobile.jsx";
+initializeNative();
 import "./style.css";
 import "./arena.css";
 import "./lore.css";
+import "./mobile.css";
 import { loreCopy } from "./lore/copy.js";
 import {
   movementAssessment,
@@ -118,7 +121,7 @@ function routeFromHash() {
       person: parts[1] === "person" ? parts[2] : null,
     };
   return {
-    page: ["updates", "players", "lab", "online", "account"].includes(parts[0])
+    page: ["updates", "players", "lab", "online", "account", "download"].includes(parts[0])
       ? parts[0]
       : "home",
     anchor: parts[0] === "roster" ? "roster" : null,
@@ -261,6 +264,7 @@ function App() {
             onClick={() => navigate("")}
             aria-label="TEKKEN ATLAS home"
           >
+            <img className="mobile-brand-icon" src={assetPath("app/icon-192.png")} alt="" />
             <span className="brand-symbol">
               T<span>8</span>
             </span>
@@ -379,12 +383,16 @@ function App() {
           </React.Suspense>
         ) : route.page === "account" ? (
           <AccountPage lang={lang} />
+        ) : route.page === "download" ? (
+          <AppDownload lang={lang} full navigate={navigate} />
         ) : route.page === "updates" ? (
           <Updates {...context} />
         ) : (
           <Players {...context} />
         )}
       </main>
+      <MobileNavigation route={route} lang={lang} navigate={navigate} />
+      <OfflineNotice lang={lang} />
       <Footer {...context} />
       <CommunityNotice lang={lang} />
       {community.authOpen && (
@@ -546,6 +554,7 @@ function Home(ctx) {
         </div>
         <span className="stats-note">{t.dataNote}</span>
       </div>
+      <AppDownload lang={lang} navigate={navigate} />
       <div className="home-community-layout">
         <Roster {...ctx} />
         <Standings lang={lang} />
@@ -1183,7 +1192,7 @@ function MoveEffects({ move, lang = "zh", detailed = false }) {
 }
 function MoveTable({ moves, t, lang, onMove }) {
   return (
-    <div className="table-scroll">
+    <div className="table-scroll move-table-scroll">
       <table className="move-table">
         <thead>
           <tr>
@@ -1214,21 +1223,21 @@ function MoveTable({ moves, t, lang, onMove }) {
                   <small>{m.section}</small>
                 </button>
               </td>
-              <td>
+              <td data-label={t.command}>
                 <code>{m.command}</code>
               </td>
-              <td>
+              <td data-label={t.level}>
                 <Level value={m.target} t={t} />
               </td>
-              <td className="damage-value">{m.damage || "—"}</td>
-              <td className="startup-value">{m.startup || "—"}</td>
-              <td>
+              <td data-label={t.damage} className="damage-value">{m.damage || "—"}</td>
+              <td data-label={t.startup} className="startup-value">{m.startup || "—"}</td>
+              <td data-label={t.block}>
                 <Frame value={m.block} />
               </td>
-              <td>
+              <td data-label={t.hit}>
                 <Frame value={m.hit} />
               </td>
-              <td>
+              <td data-label={t.counter}>
                 <Frame value={m.counter_hit} />
               </td>
               <td className="move-effects-cell"><MoveEffects move={m} lang={lang} /></td>

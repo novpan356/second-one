@@ -1,3 +1,4 @@
+import { isNativeApp, websiteUrl } from "../mobile.jsx";
 import React, { useEffect, useState } from "react";
 import {
   ThumbsUp,
@@ -67,7 +68,7 @@ export function AuthForm({ lang, onClose }) {
       email = String(form.get("email") || "").trim(),
       password = String(form.get("password") || ""),
       nickname = String(form.get("nickname") || "").trim();
-    const redirectTo = location.origin + location.pathname;
+    const redirectTo = isNativeApp ? websiteUrl : location.origin + location.pathname;
     try {
       if (mode === "register") {
         if (!nickname || textLength(nickname) > 24) throw Error("nickname");

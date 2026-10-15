@@ -1,0 +1,21 @@
+{
+  "appId": "com.symcrew.tekkenatlas",
+  "appName": "SYM CREW",
+  "webDir": "dist",
+  "backgroundColor": "#080d18",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#080d18",
+    "allowMixedContent": false,
+    "minWebViewVersion": 107,
+    "errorPath": "webview-update.html"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SYM CREW</string>
+    <string name="title_activity_main">SYM CREW</string>
+    <string name="package_name">com.symcrew.tekkenatlas</string>
+    <string name="custom_url_scheme">com.symcrew.tekkenatlas</string>
+</resources>

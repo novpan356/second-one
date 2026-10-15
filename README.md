@@ -65,3 +65,5 @@ npm run test:lore-ui
 招式搜索支持 `d/f+2` / `df2` / `↘+2`、LP/RP/LK/RK、名称分词、部分常见俗称和英文名称轻微拼写错误；同时按住与连续输入保持区分。输入“中段 浮空”等可以组合筛选资料中已记录的特性。搜索时默认按匹配程度排序，无搜索词时保留来源顺序。
 
 每条招式提供普通命中、反击命中、被防御后的对手状态摘要，详情另列使用者收招状态和原始标记。倒地方向只展开来源明确写出的 FUFT/FUFA/FDFT/FDFA/FL/FR；其余显示未收录。详细边界见 `SOURCES.md`。新增交互检查：`ATLAS_TEST_URL=http://127.0.0.1:5183 node tests/move-ui.mjs`（先在该端口启动 Vite）。
+
+安卓预览版及竖屏适配：见 [ANDROID.md](ANDROID.md)。主页“下载安卓 App”可进入安装页。APK 随 GitHub Pages 工作流生成，内置资料支持离线查询；联网功能继续使用现有 Supabase 配置。
