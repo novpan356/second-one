@@ -37,6 +37,7 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation platform("org.jetbrains.kotlin:kotlin-bom:1.9.25")
     androidTestImplementation "androidx.test:core:1.7.0"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

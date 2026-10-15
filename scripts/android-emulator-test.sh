@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -u
+set -eu
 adb shell svc wifi disable
 adb shell svc data disable
 native_log=/tmp/sym-native-test.log
-if (cd android && ./gradlew --no-daemon --console=plain connectedDebugAndroidTest) >"$native_log" 2>&1; then
+if (cd android && ./gradlew --no-daemon --console=plain :app:connectedDebugAndroidTest) >"$native_log" 2>&1; then
   cat "$native_log"
   exit 0
 else

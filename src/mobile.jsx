@@ -37,7 +37,8 @@ export async function initializeNative() {
   document.documentElement.classList.add('native-app');
   const {App}=await import('@capacitor/app');
   await App.addListener('backButton',({canGoBack})=>{
-    if(document.querySelector('[role="dialog"]')) document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    const dialogs=document.querySelectorAll('[role="dialog"]');
+    if(dialogs.length) dialogs[dialogs.length-1].querySelector('.modal-heading button')?.click();
     else if(canGoBack) history.back();
     else if(location.hash && location.hash!=='#roster') location.hash='roster';
     else App.exitApp();

@@ -37,6 +37,7 @@ public class OfflineAppTest {
             app.onActivity(activity -> assertEquals("com.symcrew.tekkenatlas", activity.getPackageName()));
             waitFor(app, "document.querySelectorAll('.fighter-card').length === 41");
             waitFor(app, "document.querySelector('.mobile-brand-icon').naturalWidth > 0");
+            waitFor(app, "navigator.onLine === false");
             evaluate(app, "location.hash = 'fighter/kazuya/moves'");
             waitFor(app, "document.querySelectorAll('.move-table tbody tr').length > 0");
             evaluate(app, "document.querySelector('.move-name').click()");
