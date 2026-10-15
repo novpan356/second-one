@@ -1,3 +1,4 @@
+import { moveSearchScore } from "./move-search.js";
 export function startupFrames(move) {
   // A multi-hit string's individual extension startup is not its total execution time.
   if (
@@ -19,14 +20,10 @@ export function filterMoves(
   moves,
   { query = "", level = "", safe = false, sort = "source" } = {},
 ) {
-  const q = query.trim().toLowerCase();
-  let list = moves.filter(
-    (m) =>
-      !q ||
-      [m.name, m.command, m.notes, m.section].some((s) =>
-        s?.toLowerCase().includes(q),
-      ),
-  );
+  let list = moves.map((move, order) => ({ move, order, score: moveSearchScore(move, query) }))
+    .filter(x => x.score >= 0)
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .map(x => x.move);
   if (level === "throw")
     list = list.filter(
       (m) => /throw/i.test(m.section) || /throw/i.test(m.target),

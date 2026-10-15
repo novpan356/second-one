@@ -51,6 +51,7 @@ import {
   officialLinks,
 } from "./editorial";
 import { filterMoves, firstStartup, punishCandidates } from "./query";
+import { moveEffects, effectCopy } from "./move-effects.js";
 import "./style.css";
 import "./arena.css";
 import "./lore.css";
@@ -1018,7 +1019,7 @@ function Fighter(ctx) {
     </>
   );
 }
-function Moves({ data, t, onMove }) {
+function Moves({ data, t, lang, onMove }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
   const [sort, setSort] = useState("source");
@@ -1077,7 +1078,7 @@ function Moves({ data, t, onMove }) {
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
-          <option value="source">{t.sortDefault}</option>
+          <option value="source">{query.trim() ? effectCopy[lang].relevance : t.sortDefault}</option>
           <option value="startup">{t.sortFast}</option>
         </select>
       </div>
@@ -1095,7 +1096,8 @@ function Moves({ data, t, onMove }) {
         </label>
       </div>
       {safe && <p className="small-note">{t.safeNote}</p>}
-      <MoveTable moves={moves.slice(0, limit)} t={t} onMove={onMove} />
+      <p className="small-note move-search-help">{effectCopy[lang].help}</p>
+      <MoveTable moves={moves.slice(0, limit)} t={t} lang={lang} onMove={onMove} />
       {!moves.length && (
         <Empty
           t={t}
@@ -1164,7 +1166,22 @@ function Level({ value, t }) {
     </span>
   );
 }
-function MoveTable({ moves, t, onMove }) {
+function MoveEffects({ move, lang = "zh", detailed = false }) {
+  const c = effectCopy[lang], effects = moveEffects(move);
+  return <div className={"move-effects " + (detailed ? "expanded" : "compact")}>
+    {['block','hit','counter', ...(detailed ? ['self'] : [])].map(kind => {
+      const outcome = effects[kind];
+      return <div className={"effect-line effect-" + outcome.state} key={kind}>
+        <span className="effect-label">{c[kind]}</span>
+        <span>{c[outcome.state]}{outcome.tentative && <> · {c.tentative}</>}{outcome.guardable && <> · {c.guardable}</>}</span>
+        {detailed && outcome.raw && <code>{c.evidence}: {outcome.raw}</code>}
+      </div>;
+    })}
+    {effects.conditional && <small className="effect-condition">{c.conditional}</small>}
+    {detailed && <p className="small-note">{c.note}</p>}
+  </div>;
+}
+function MoveTable({ moves, t, lang, onMove }) {
   return (
     <div className="table-scroll">
       <table className="move-table">
@@ -1178,6 +1195,7 @@ function MoveTable({ moves, t, onMove }) {
             <th>{t.block}</th>
             <th>{t.hit}</th>
             <th>{t.counter}</th>
+            <th>{effectCopy[lang].title}</th>
             <th aria-label={t.details} />
           </tr>
         </thead>
@@ -1213,6 +1231,7 @@ function MoveTable({ moves, t, onMove }) {
               <td>
                 <Frame value={m.counter_hit} />
               </td>
+              <td className="move-effects-cell"><MoveEffects move={m} lang={lang} /></td>
               <td>
                 <ChevronRight size={15} />
               </td>
@@ -1336,6 +1355,10 @@ function MoveDetail({ move: m, data, t, fighter, lang }) {
         ))}
       </div>
       <div className="detail-block">
+        <h4>{effectCopy[lang].title}</h4>
+        <MoveEffects move={m} lang={lang} detailed />
+      </div>
+      <div className="detail-block">
         <h4>{t.conditions}</h4>
         <p>
           <code>{m.states || "—"}</code>
@@ -1439,7 +1462,7 @@ function Combos({ data, t }) {
     </>
   );
 }
-function Punish({ data, t, onMove }) {
+function Punish({ data, t, lang, onMove }) {
   const [frames, setFrames] = useState(12);
   const [stance, setStance] = useState("standing");
   const list = punishCandidates(data.moves, frames, stance);
@@ -1494,7 +1517,7 @@ function Punish({ data, t, onMove }) {
           </span>
         </div>
       </div>
-      <MoveTable moves={list} t={t} onMove={onMove} />
+      <MoveTable moves={list} t={t} lang={lang} onMove={onMove} />
       {!list.length && <Empty t={t} message={t.punishEmpty} />}
       <DataLink data={data} t={t} />
     </>

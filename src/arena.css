@@ -316,8 +316,14 @@ summary:focus-visible {
   border-color: #34425c;
   color: var(--blue);
 }
+.search-input:focus-within {
+  background: #14233a;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px #23aaff22;
+}
 .search-input input {
   color: white;
+  caret-color: var(--yellow);
 }
 .search-input input::placeholder {
   color: #9cabc3;
@@ -1429,4 +1435,22 @@ html[lang="en"] .section-heading h2 {
     font-size: clamp(44px, 12vw, 70px);
     padding: 36px 16px;
   }
+}
+
+/* Outcome captions retain the arena palette while allowing full posture names. */
+.move-table .move-effects-cell { min-width: 300px; max-width: 400px; white-space: normal; }
+.move-effects { display: grid; gap: 7px; line-height: 1.55; }
+.effect-line { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px; color: #e5ecf8; font-size: 11px; }
+.effect-label { color: #8da5c6; font-weight: 600; }
+.effect-airborne > span:last-of-type { color: #ffdb63; }
+.effect-crouch > span:last-of-type, .effect-FC > span:last-of-type { color: #69baff; }
+.effect-down > span:last-of-type, .effect-FUFT > span:last-of-type, .effect-FUFA > span:last-of-type, .effect-FDFT > span:last-of-type, .effect-FDFA > span:last-of-type { color: #ff9b91; }
+.effect-condition { color: #e7c46a; font-size: 10px; }
+.move-effects.expanded { padding: 16px; border-left: 3px solid var(--red); background: #0b1321; }
+.move-effects.expanded .effect-line { font-size: 13px; grid-template-columns: 150px minmax(0, 1fr); }
+.move-effects.expanded code { grid-column: 2; overflow-wrap: anywhere; font-size: 11px; color: #97a8c3; }
+.move-search-help { margin: 0 0 16px; line-height: 1.7; }
+@media(max-width: 600px) {
+  .move-effects.expanded .effect-line { grid-template-columns: 1fr; gap: 3px; }
+  .move-effects.expanded code { grid-column: 1; }
 }
