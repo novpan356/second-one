@@ -50,6 +50,16 @@ try {
  await page.evaluate(()=>window.dispatchEvent(new Event('offline')));
  await page.getByRole('status').filter({hasText:'当前离线'}).waitFor();
  await page.context().setOffline(false);
+ const animated=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ await animated.goto(base);await animated.locator('.fighter-card').first().waitFor();
+ await animated.locator('.mobile-dock button').nth(1).click();
+ for(let i=0;i<5;i++) {
+  assert.ok(await animated.evaluate(()=>innerWidth===390 && document.documentElement.scrollWidth===390),'transition must not expand the phone viewport');
+  await animated.waitForTimeout(100);
+ }
+ await animated.evaluate(()=>{document.documentElement.classList.add('native-app');document.documentElement.style.setProperty('--safe-area-inset-top','24px');document.documentElement.style.setProperty('--safe-area-inset-bottom','18px');});
+ assert.equal(await animated.locator('.site-header').evaluate(el=>Math.round(el.getBoundingClientRect().height)),84);
+ await animated.close();
  assert.deepEqual(errors,[]);
  console.log('PASS: 320–430px portrait pages, touch navigation, full-width move cards, scrollable details, three languages, download link and offline notice.');
 } finally {await browser.close();}
