@@ -34,6 +34,7 @@ public class OfflineAppTest {
 
     @Test public void offlineRosterMovesDialogAndAndroidBack() throws Exception {
         try (ActivityScenario<MainActivity> app = ActivityScenario.launch(MainActivity.class)) {
+            app.onActivity(activity -> assertEquals("com.symcrew.tekkenatlas", activity.getPackageName()));
             waitFor(app, "document.querySelectorAll('.fighter-card').length === 41");
             waitFor(app, "document.querySelector('.mobile-brand-icon').naturalWidth > 0");
             evaluate(app, "location.hash = 'fighter/kazuya/moves'");
