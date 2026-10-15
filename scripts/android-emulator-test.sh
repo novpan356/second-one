@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 set -eu
+# The Google APIs AVD supports root. ADB uses the emulator transport, not these
+# guest interfaces. New emulator images can retain Ethernet even in airplane mode.
+adb root
+adb wait-for-device
+if [ "$(adb shell id -u | tr -d '\r')" != "0" ]; then
+  echo '::error title=Offline test setup::The CI emulator must support adb root to disable guest networking.'
+  exit 1
+fi
 adb shell cmd connectivity airplane-mode enable
 adb shell svc wifi disable
 adb shell svc data disable
+adb shell 'for interface in /sys/class/net/*; do name=${interface##*/}; if [ "$name" != lo ]; then ip link set "$name" down; fi; done'
+adb shell ip -brief link
 native_log=/tmp/sym-native-test.log
 if (cd android && ./gradlew --no-daemon --console=plain :app:connectedDebugAndroidTest) >"$native_log" 2>&1; then
   cat "$native_log"

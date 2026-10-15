@@ -39,10 +39,18 @@ public class OfflineAppTest {
             app.onActivity(activity -> assertEquals("com.symcrew.tekkenatlas", activity.getPackageName()));
             waitFor(app, "document.querySelectorAll('.fighter-card').length === 41");
             waitFor(app, "document.querySelector('.mobile-brand-icon').naturalWidth > 0");
-            app.onActivity(activity -> {
-                ConnectivityManager network = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-                assertNull("Emulator must have no active external network", network.getActiveNetwork());
-            });
+            // Interface shutdown and ConnectivityService callbacks are asynchronous.
+            AtomicReference<Boolean> disconnected = new AtomicReference<>(false);
+            long networkDeadline = System.currentTimeMillis() + 15000;
+            do {
+                app.onActivity(activity -> {
+                    ConnectivityManager network = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+                    disconnected.set(network.getActiveNetwork() == null);
+                });
+                if (disconnected.get()) break;
+                Thread.sleep(250);
+            } while (System.currentTimeMillis() < networkDeadline);
+            assertTrue("Emulator must have no active external network after interface shutdown", disconnected.get());
             waitFor(app, "document.querySelector('.offline-notice')");
             evaluate(app, "location.hash = 'fighter/kazuya/moves'");
             waitFor(app, "document.querySelectorAll('.move-table tbody tr').length > 0");
