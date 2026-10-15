@@ -4,13 +4,13 @@
   "webDir": "dist",
   "backgroundColor": "#080d18",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "errorPath": "webview-update.html"
   },
   "android": {
     "backgroundColor": "#080d18",
     "allowMixedContent": false,
-    "minWebViewVersion": 107,
-    "errorPath": "webview-update.html"
+    "minWebViewVersion": 107
   },
   "plugins": {
     "SystemBars": {
