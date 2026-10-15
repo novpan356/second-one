@@ -67,3 +67,7 @@ npm run test:lore-ui
 每条招式提供普通命中、反击命中、被防御后的对手状态摘要，详情另列使用者收招状态和原始标记。倒地方向只展开来源明确写出的 FUFT/FUFA/FDFT/FDFA/FL/FR；其余显示未收录。详细边界见 `SOURCES.md`。新增交互检查：`ATLAS_TEST_URL=http://127.0.0.1:5183 node tests/move-ui.mjs`（先在该端口启动 Vite）。
 
 安卓预览版及竖屏适配：见 [ANDROID.md](ANDROID.md)。主页“下载安卓 App”可进入安装页。APK 随 GitHub Pages 工作流生成，内置资料支持离线查询；联网功能继续使用现有 Supabase 配置。
+
+### 沙欣 3D 训练原型
+
+新增独立入口 [`/dojo/`](https://novpan356.github.io/second-one/dojo/)，也可从「训练室」进入。支持键盘、触屏多指、手柄映射、骨骼动画与可视化攻击/受击/推挤体。当前采用原创沙欣形象和日式道场示意模型，不能作为原版铁拳8的帧级模拟器。已取得的 CC0 通用人形与 46 段动画可在素材库预览。操作、资产缺口、数据来源及验证方式见 [DOJO.md](DOJO.md)。

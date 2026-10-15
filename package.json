@@ -16,7 +16,8 @@
     "android:sync": "npm run build && cap sync android",
     "android:icons": "node scripts/android-icons.mjs",
     "android:debug": "npm run android:sync && cd android && ./gradlew assembleDebug",
-    "test:mobile-ui": "node tests/mobile-ui.mjs"
+    "test:mobile-ui": "node tests/mobile-ui.mjs",
+    "test:dojo-ui": "node tests/dojo-ui.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
@@ -27,7 +28,8 @@
     "@supabase/supabase-js": "^2.117.3",
     "lucide-react": "^0.468.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",

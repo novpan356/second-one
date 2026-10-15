@@ -821,6 +821,9 @@ function Lab(ctx) {
       <div className="eyebrow">THE FIGHT LAB</div>
       <h1 className="page-title">{t.labTitle}</h1>
       <p className="page-subtitle">{t.labSub}</p>
+      <a className="lab-shortcut" style={{marginBottom:24,display:"flex",padding:18,border:"1px solid var(--red)"}} href={assetPath("dojo/")}>
+        <ArrowUpRight size={20} /> {lang === "zh" ? "沙欣 3D 训练原型 · 键盘 / 触屏 / 手柄" : lang === "ja" ? "シャヒーン 3D トレーニング試作版" : "Shaheen 3D training prototype"} <ArrowUpRight size={16} />
+      </a>
       <div className="lab-select-card">
         <Portrait fighter={fighter} />
         <div>
