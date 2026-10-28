@@ -20,6 +20,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Select build scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          native=true
+          if [ "$EVENT_NAME" = push ] && git rev-parse --verify "$BASE_SHA^{commit}" >/dev/null 2>&1; then
+            native=false
+            while IFS= read -r file; do
+              case "$file" in
+                portfolio/*|PORTFOLIO.md|.github/workflows/pages.yml|"") ;;
+                *) native=true; break ;;
+              esac
+            done < <(git diff --name-only "$BASE_SHA" HEAD)
+          fi
+          echo "native=$native" >> "$GITHUB_OUTPUT"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,11 +55,13 @@ jobs:
           VITE_PLAYER_API_URL: ${{ vars.VITE_PLAYER_API_URL }}
         run: npm run build
       - name: Set up Java for Android
+        if: steps.scope.outputs.native == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
       - name: Cache Gradle dependencies
+        if: steps.scope.outputs.native == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -49,25 +70,31 @@ jobs:
           key: android-gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: android-gradle-${{ runner.os }}-
       - name: Retain preview signing identity
+        if: steps.scope.outputs.native == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
           key: symcrew-preview-debug-signing-v1
       - name: Install Android SDK target
+        if: steps.scope.outputs.native == 'true'
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"'
       - name: Bundle offline assets and Android plugins
+        if: steps.scope.outputs.native == 'true'
         run: npx --no-install cap sync android
       - name: Build and lint Android preview
+        if: steps.scope.outputs.native == 'true'
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --console=plain assembleDebug lintDebug
       - name: Enable emulator acceleration
+        if: steps.scope.outputs.native == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Test bundled app offline on Android
+        if: steps.scope.outputs.native == 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -78,7 +105,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: bash scripts/android-emulator-test.sh
       - name: Save native test reports
-        if: always()
+        if: always() && steps.scope.outputs.native == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Android-test-reports
@@ -86,6 +113,7 @@ jobs:
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
       - name: Verify and publish Android download
+        if: steps.scope.outputs.native == 'true'
         run: |
           mkdir -p dist/downloads
           cp android/app/build/outputs/apk/debug/app-debug.apk dist/downloads/SYM-CREW-Android.apk
@@ -94,11 +122,27 @@ jobs:
           cd dist/downloads
           sha256sum SYM-CREW-Android.apk > SHA256SUMS.txt
       - name: Save Android APK artifact
+        if: steps.scope.outputs.native == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: SYM-CREW-Android-preview
           path: dist/downloads/
           retention-days: 30
+      - name: Preserve existing Android download for portfolio-only updates
+        if: steps.scope.outputs.native != 'true'
+        run: |
+          mkdir -p dist/downloads
+          for file in SYM-CREW-Android.apk SHA256SUMS.txt apk-info.txt; do
+            curl --fail --silent --show-error --location --retry 3 --max-time 90 "https://novpan356.github.io/second-one/downloads/$file" -o "dist/downloads/$file"
+          done
+          cd dist/downloads
+          sha256sum --check SHA256SUMS.txt
+      - name: Include RAY PAN portfolio and owner studio
+        run: |
+          if [ -d portfolio ]; then
+            mkdir -p dist/portfolio
+            cp -R portfolio/. dist/portfolio/
+          fi
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
