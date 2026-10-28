@@ -23,7 +23,7 @@ const stage=$('#gallery-stage'),world=$('#gallery-world');
 let entranceProgress=document.documentElement.classList.contains('intro-pending')?0:1;
 window.addEventListener('portfolio-enter-progress',e=>{entranceProgress=e.detail;requestFrame();});
 let drift=.075,driftTarget=.075,hoveredCard=-1,focusedCard=-1;
-let offset=.5,target=.5,velocity=0,dragging=false,hovering=false,focused=false,userPaused=false,dragDistance=0,lastPointer=0,ignoreClickUntil=0;
+let offset=innerWidth<=650?0:.5,target=offset,velocity=0,dragging=false,hovering=false,focused=false,userPaused=false,dragDistance=0,lastPointer=0,ignoreClickUntil=0;
 let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const galleryProjects=[...projects,...projects];
@@ -42,10 +42,12 @@ function draw(now){
  offset=reduced.matches?target:lerp(offset,target,Math.min(1,dt*9));
  if(galleryProjects.length&&Math.abs(target)>10000){const k=Math.floor(target/galleryProjects.length)*galleryProjects.length;target-=k;offset-=k;}
  stage.style.visibility=inGallery?'visible':'hidden';stage.style.opacity=String((1-exit)*entranceProgress);stage.inert=!inGallery||entranceProgress<1;
- const radius=mobile?vw*.9+250:Math.max(760,vw*.66),arcWidth=mobile?245:252.5,arcHeight=arcWidth*1.37,baseZ=mobile?-520:-430,step=mobile?.30:.24;
+ const radius=mobile?vw*.85+230:Math.max(760,vw*.66),arcWidth=mobile?188:252.5,arcHeight=arcWidth*1.37,baseZ=mobile?-360:-430,step=mobile?.46:.24;
  let hoverAnimating=false;const floating=entranceProgress===1&&!userPaused&&!reduced.matches&&inGallery&&!currentProject&&progress<.8;
  for(const [i,card]of cards.entries()){
-  const relative=((i-offset+galleryProjects.length*100+galleryProjects.length/2)%galleryProjects.length)-galleryProjects.length/2;
+  const repeated=mobile&&i>=projects.length;card.setAttribute('aria-hidden',String(repeated));if(repeated){card.style.visibility='hidden';card.style.opacity='0';card.style.pointerEvents='none';card.tabIndex=-1;continue;}
+  const total=mobile?projects.length:galleryProjects.length;
+  const relative=((i-offset+total*100+total/2)%total)-total/2;
   const angle=relative*step,arcX=vw/2+Math.sin(angle)*radius,arcY=vh*(mobile?.59:.61)+(1-Math.cos(angle))*12,arcZ=baseZ+radius*(1-Math.cos(angle));
   const stackW=mobile?192:270,stackH=stackW*1.3,stackX=vw*(mobile?.56:.67)-i*(mobile?8:12),stackY=vh*(mobile?.68:.52)+Math.sin(i*.7)*8,stackZ=45-i*24;
   let width=lerp(arcWidth,stackW,progress),height=lerp(arcHeight,stackH,progress),x=lerp(arcX,stackX,progress),y=lerp(arcY,stackY,progress),z=lerp(arcZ,stackZ,progress);
@@ -57,7 +59,7 @@ function draw(now){
   const bob=floating&&!over?Math.sin(now*.00072+i*1.71)*5.5*(1-progress):0;
   if(entranceProgress<1){x=lerp(vw/2,x,entranceProgress);y=lerp(vh*.5,y,entranceProgress);z=lerp(-850,z,entranceProgress);ry-=45*(1-entranceProgress);rz+=(relative<0?-12:12)*(1-entranceProgress);}
   card.style.width=width+'px';card.style.height=height+'px';card.style.transform=`translate3d(${x-width/2}px,${y-height/2-h.lift+bob}px,${z+h.lift*2}px) rotateX(${h.rx}deg) rotateY(${ry+h.ry}deg) rotateZ(${rz}deg) scale(${h.scale})`;card.classList.toggle('is-hovered',over);
-  const alpha=i===0?1:1-expand;card.style.opacity=String(alpha);card.style.pointerEvents=alpha<.05||!inGallery||exit>.5?'none':'auto';card.tabIndex=alpha<.05||!inGallery||exit>.5?-1:0;card.style.cursor=galleryInteractive?'grab':'pointer';
+  const arcAlpha=mobile?1-smooth(clamp((Math.abs(relative)-1)/.45,0,1)):1;const alpha=(i===0?1:1-expand)*lerp(arcAlpha,1,progress);card.style.opacity=String(alpha);card.style.visibility=alpha<.01?'hidden':'visible';card.setAttribute('aria-hidden',String(alpha<.05));card.style.pointerEvents=alpha<.05||!inGallery||exit>.5?'none':'auto';card.tabIndex=alpha<.05||!inGallery||exit>.5?-1:0;card.style.cursor=galleryInteractive?'grab':'pointer';
  }
  const introFade=1-clamp(scrollPos/(heroH*.45),0,1);$('.hero-heading').style.opacity=introFade;$('.hero-heading').style.transform=`translateY(${-Math.min(scrollPos*.13,50)}px)`;
  const first=$('.story-first'),second=$('.story-second'),firstOn=expand<.42;
@@ -69,9 +71,10 @@ function draw(now){
 function requestFrame(){if(!frame&&documentVisible)frame=requestAnimationFrame(draw);}
 window.addEventListener('scroll',()=>{scrollPos=scrollY;requestFrame();},{passive:true});window.addEventListener('resize',measure);window.addEventListener('load',measure);
 for(const [index,card] of cards.entries()){
- card.addEventListener('pointerdown',e=>{if(!galleryInteractive)return;dragging=true;dragDistance=0;lastPointer=e.clientX;velocity=0;card.setPointerCapture(e.pointerId);requestFrame();});
- card.addEventListener('pointermove',e=>{if(!dragging){const r=card.getBoundingClientRect(),h=hoverStates[index];h.tx=clamp((.5-(e.clientY-r.top)/r.height)*11,-6,6);h.ty=clamp(((e.clientX-r.left)/r.width-.5)*13,-7,7);card.style.setProperty('--glint-x',((e.clientX-r.left)/r.width*100)+'%');requestFrame();return;}const dx=e.clientX-lastPointer;dragDistance+=Math.abs(dx);target-=dx/(vw<=650?125:170);velocity=-dx*.18;lastPointer=e.clientX;requestFrame();});
- const end=()=>{if(dragging&&dragDistance>6)ignoreClickUntil=performance.now()+250;dragging=false;requestFrame();};
+ let touchStart=null;
+ card.addEventListener('pointerdown',e=>{if(!galleryInteractive)return;if(e.pointerType==='touch'){touchStart={x:e.clientX,y:e.clientY};dragDistance=0;lastPointer=e.clientX;velocity=0;return;}dragging=true;dragDistance=0;lastPointer=e.clientX;velocity=0;card.setPointerCapture(e.pointerId);requestFrame();});
+ card.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&touchStart&&!dragging){const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>7){touchStart=null;return;}if(Math.abs(dx)<9)return;dragging=true;card.setPointerCapture(e.pointerId);}if(e.pointerType==='touch'&&!dragging)return;if(!dragging){const r=card.getBoundingClientRect(),h=hoverStates[index];h.tx=clamp((.5-(e.clientY-r.top)/r.height)*11,-6,6);h.ty=clamp(((e.clientX-r.left)/r.width-.5)*13,-7,7);card.style.setProperty('--glint-x',((e.clientX-r.left)/r.width*100)+'%');requestFrame();return;}const dx=e.clientX-lastPointer;dragDistance+=Math.abs(dx);target-=dx/(vw<=650?125:170);velocity=-dx*.18;lastPointer=e.clientX;requestFrame();});
+ const end=()=>{touchStart=null;if(dragging&&dragDistance>6)ignoreClickUntil=performance.now()+250;dragging=false;requestFrame();};
  card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
  card.addEventListener('mouseenter',()=>{hovering=true;hoveredCard=index;requestFrame();});card.addEventListener('mouseleave',()=>{hovering=false;hoveredCard=-1;requestFrame();});
  card.addEventListener('keydown',e=>{if(!galleryInteractive)return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();target+=e.key==='ArrowRight'?1:-1;requestFrame();}});
