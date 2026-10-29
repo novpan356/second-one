@@ -34,10 +34,10 @@ function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;ga
 function draw(now){
  frame=null;if(!documentVisible)return;
  const dt=Math.min((now-lastTime)/1000||.016,.08);lastTime=now;
- const galleryScroll=scrollPos-galleryTop,galleryReveal=galleryTop>0?smooth(clamp((galleryScroll+vh*.88)/(vh*.88),0,1)):1;
+ const galleryScroll=scrollPos-galleryTop,introScale=profile.character?.scrollScale||1,revealDistance=vh*.88*introScale,galleryReveal=galleryTop>0?smooth(clamp((galleryScroll+revealDistance)/revealDistance,0,1)):1;
  const mobile=vw<=650,begin=heroH*.4,progress=smooth(clamp((galleryScroll-begin)/(heroH*1.04),0,1)),expand=smooth(clamp((galleryScroll-heroH*1.45)/(heroH*.85),0,1));
  const finish=heroH+storyH,exit=clamp((galleryScroll-(finish-vh*.85))/(vh*.7),0,1);
- const inGallery=galleryScroll> -vh*.9&&galleryScroll<finish-vh*.1;galleryInteractive=progress<.8&&galleryReveal>.95;
+ const inGallery=galleryScroll> -vh*.9*introScale&&galleryScroll<finish-vh*.1;galleryInteractive=progress<.8&&galleryReveal>.95;
  const paused=!inGallery||galleryReveal<.95||entranceProgress<1||userPaused||hovering||focused||dragging||!!currentProject||reduced.matches||progress>.03;
  drift=lerp(drift,driftTarget,Math.min(1,dt*3));if(!paused)target+=dt*drift;
  if(!dragging&&!reduced.matches){target+=velocity*dt;velocity*=Math.exp(-5*dt);}
