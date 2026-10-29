@@ -24,24 +24,25 @@ let entranceProgress=document.documentElement.classList.contains('intro-pending'
 window.addEventListener('portfolio-enter-progress',e=>{entranceProgress=e.detail;requestFrame();});
 let drift=.075,driftTarget=.075,hoveredCard=-1,focusedCard=-1;
 let offset=innerWidth<=650?0:.5,target=offset,velocity=0,dragging=false,hovering=false,focused=false,userPaused=false,dragDistance=0,lastPointer=0,ignoreClickUntil=0;
-let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
+let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,galleryTop=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const galleryProjects=[...projects,...projects];
 world.innerHTML=galleryProjects.map((p,i)=>`<button class="gallery-card" data-project="${p.id}" data-gallery-index="${i}" aria-label="查看${type(p)}：${escapeHTML(p.title)}">${cover(p)}<span class="gallery-badge"><span>${p.kind==='video'?'▷':'↗'}</span><b>${escapeHTML(p.english)}</b></span></button>`).join('');
 const cards=[...world.children],hoverStates=cards.map(()=>({rx:0,ry:0,tx:0,ty:0,lift:0,scale:1}));
-function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;storyH=$('.story-track').offsetHeight;requestFrame();}
+function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;galleryTop=$('.hero').getBoundingClientRect().top+scrollY;storyH=$('.story-track').offsetHeight;requestFrame();}
 function draw(now){
  frame=null;if(!documentVisible)return;
  const dt=Math.min((now-lastTime)/1000||.016,.08);lastTime=now;
- const mobile=vw<=650,begin=heroH*.4,progress=smooth(clamp((scrollPos-begin)/(heroH*1.04),0,1)),expand=smooth(clamp((scrollPos-heroH*1.45)/(heroH*.85),0,1));
- const finish=heroH+storyH,exit=clamp((scrollPos-(finish-vh*.85))/(vh*.7),0,1);
- const inGallery=scrollPos<finish-vh*.1;galleryInteractive=progress<.8;
- const paused=entranceProgress<1||userPaused||hovering||focused||dragging||!!currentProject||reduced.matches||progress>.03;
+ const galleryScroll=scrollPos-galleryTop,galleryReveal=galleryTop>0?smooth(clamp((galleryScroll+vh*.88)/(vh*.88),0,1)):1;
+ const mobile=vw<=650,begin=heroH*.4,progress=smooth(clamp((galleryScroll-begin)/(heroH*1.04),0,1)),expand=smooth(clamp((galleryScroll-heroH*1.45)/(heroH*.85),0,1));
+ const finish=heroH+storyH,exit=clamp((galleryScroll-(finish-vh*.85))/(vh*.7),0,1);
+ const inGallery=galleryScroll> -vh*.9&&galleryScroll<finish-vh*.1;galleryInteractive=progress<.8&&galleryReveal>.95;
+ const paused=!inGallery||galleryReveal<.95||entranceProgress<1||userPaused||hovering||focused||dragging||!!currentProject||reduced.matches||progress>.03;
  drift=lerp(drift,driftTarget,Math.min(1,dt*3));if(!paused)target+=dt*drift;
  if(!dragging&&!reduced.matches){target+=velocity*dt;velocity*=Math.exp(-5*dt);}
  offset=reduced.matches?target:lerp(offset,target,Math.min(1,dt*9));
  if(galleryProjects.length&&Math.abs(target)>10000){const k=Math.floor(target/galleryProjects.length)*galleryProjects.length;target-=k;offset-=k;}
- stage.style.visibility=inGallery?'visible':'hidden';stage.style.opacity=String((1-exit)*entranceProgress);stage.inert=!inGallery||entranceProgress<1;
+ stage.style.visibility=inGallery?'visible':'hidden';stage.style.opacity=String((1-exit)*entranceProgress*galleryReveal);stage.inert=!inGallery||entranceProgress<1||galleryReveal<.95;
  const radius=mobile?vw*.85+230:Math.max(760,vw*.66),arcWidth=mobile?188:252.5,arcHeight=arcWidth*1.37,baseZ=mobile?-360:-430,step=mobile?.46:.24;
  let hoverAnimating=false;const floating=entranceProgress===1&&!userPaused&&!reduced.matches&&inGallery&&!currentProject&&progress<.8;
  for(const [i,card]of cards.entries()){
@@ -57,11 +58,12 @@ function draw(now){
   h.lift=lerp(h.lift,desiredLift,ease);h.scale=lerp(h.scale,desiredScale,ease);h.rx=lerp(h.rx,over&&!reduced.matches?h.tx:0,ease);h.ry=lerp(h.ry,over&&!reduced.matches?h.ty:0,ease);
   if(Math.abs(h.lift-desiredLift)>.02||Math.abs(h.scale-desiredScale)>.001||Math.abs(h.rx-(over&&!reduced.matches?h.tx:0))>.02||Math.abs(h.ry-(over&&!reduced.matches?h.ty:0))>.02)hoverAnimating=true;
   const bob=floating&&!over?Math.sin(now*.00072+i*1.71)*5.5*(1-progress):0;
-  if(entranceProgress<1){x=lerp(vw/2,x,entranceProgress);y=lerp(vh*.5,y,entranceProgress);z=lerp(-850,z,entranceProgress);ry-=45*(1-entranceProgress);rz+=(relative<0?-12:12)*(1-entranceProgress);}
+  const cardReveal=entranceProgress*smooth(clamp(galleryReveal*1.5-(i%projects.length)*.055,0,1));if(cardReveal<1){const side=relative<0?-1:1;x=lerp(vw/2+side*vw*.7,x,cardReveal);y=lerp(vh*1.04,y,cardReveal);z=lerp(-850,z,cardReveal);ry-=side*40*(1-cardReveal);rz+=side*12*(1-cardReveal);}
   card.style.width=width+'px';card.style.height=height+'px';card.style.transform=`translate3d(${x-width/2}px,${y-height/2-h.lift+bob}px,${z+h.lift*2}px) rotateX(${h.rx}deg) rotateY(${ry+h.ry}deg) rotateZ(${rz}deg) scale(${h.scale})`;card.classList.toggle('is-hovered',over);
-  const arcAlpha=mobile?1-smooth(clamp((Math.abs(relative)-1)/.45,0,1)):1;const alpha=(i===0?1:1-expand)*lerp(arcAlpha,1,progress);card.style.opacity=String(alpha);card.style.visibility=alpha<.01?'hidden':'visible';card.setAttribute('aria-hidden',String(alpha<.05));card.style.pointerEvents=alpha<.05||!inGallery||exit>.5?'none':'auto';card.tabIndex=alpha<.05||!inGallery||exit>.5?-1:0;card.style.cursor=galleryInteractive?'grab':'pointer';
+  const arcAlpha=mobile?1-smooth(clamp((Math.abs(relative)-1)/.45,0,1)):1;const alpha=(i===0?1:1-expand)*lerp(arcAlpha,1,progress)*cardReveal;card.style.opacity=String(alpha);card.style.visibility=alpha<.01?'hidden':'visible';card.setAttribute('aria-hidden',String(alpha<.05));card.style.pointerEvents=alpha<.05||!inGallery||exit>.5?'none':'auto';card.tabIndex=alpha<.05||!inGallery||exit>.5?-1:0;card.style.cursor=galleryInteractive?'grab':'pointer';
  }
- const introFade=1-clamp(scrollPos/(heroH*.45),0,1);$('.hero-heading').style.opacity=introFade;$('.hero-heading').style.transform=`translateY(${-Math.min(scrollPos*.13,50)}px)`;
+ const introFade=1-clamp(galleryScroll/(heroH*.45),0,1);$('.hero-heading').style.opacity=introFade;$('.hero-heading').style.transform=`translateY(${-Math.min(Math.max(0,galleryScroll)*.13,50)}px)`;
+ const header=document.querySelector('body>header');const navReveal=entranceProgress*galleryReveal*(1-clamp((galleryScroll-heroH*.55)/(heroH*.45),0,1));header.style.opacity=String(navReveal);header.style.transform=`translateY(${(1-navReveal)*-28}px)`;header.inert=navReveal<.8;
  const first=$('.story-first'),second=$('.story-second'),firstOn=expand<.42;
  first.style.opacity=String(1-smooth(clamp((expand-.1)/.5,0,1)));first.style.transform=`translateY(${-expand*30}px)`;first.inert=!firstOn;first.setAttribute('aria-hidden',String(!firstOn));
  second.style.opacity=String(smooth(clamp((expand-.25)/.5,0,1)));second.style.transform=`translateY(${(1-expand)*25}px)`;second.inert=firstOn;second.setAttribute('aria-hidden',String(firstOn));second.style.pointerEvents=firstOn?'none':'auto';
@@ -85,7 +87,7 @@ $('#gallery-prev').addEventListener('click',()=>{target-=1;requestFrame();});$('
 $('#gallery-pause').addEventListener('click',()=>{userPaused=!userPaused;if(userPaused){velocity=0;target=offset;}$('#gallery-pause').setAttribute('aria-pressed',String(userPaused));$('#gallery-pause').setAttribute('aria-label',userPaused?'继续画廊自动转动':'暂停画廊自动转动');$('#gallery-pause').textContent=userPaused?'▷':'Ⅱ';requestFrame();});
 reduced.addEventListener('change',()=>{velocity=0;requestFrame();});document.addEventListener('visibilitychange',()=>{documentVisible=!document.hidden;if(!documentVisible){cancelAnimationFrame(frame);frame=null;}else{lastTime=performance.now();requestFrame();}});
 window.addEventListener('blur',()=>{dragging=false;velocity=0;});
-window.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||scrollPos>heroH*.45||currentProject||e.target.closest('button,a,input,.gallery-card'))return;const x=e.clientX/vw-.5;driftTarget=Math.abs(x)<.06?(driftTarget<0?-.035:.035):clamp(x*.4,-.2,.2);requestFrame();},{passive:true});
+window.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||scrollPos-galleryTop>heroH*.45||scrollPos<galleryTop-vh*.2||currentProject||e.target.closest('button,a,input,.gallery-card'))return;const x=e.clientX/vw-.5;driftTarget=Math.abs(x)<.06?(driftTarget<0?-.035:.035):clamp(x*.4,-.2,.2);requestFrame();},{passive:true});
 function filtered(){return projects.filter(p=>(filter==='all'||p.kind===filter)&&`${p.title} ${p.english} ${p.description} ${p.year} ${p.role}`.toLowerCase().includes(query.toLowerCase()));}
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}}),{threshold:.06});
 function renderProjects(){
