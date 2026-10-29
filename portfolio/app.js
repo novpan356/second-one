@@ -3,7 +3,8 @@ const profile=window.PORTFOLIO, projects=profile.projects;
 function localBlob(value){
  if(typeof value!=='string'||!value.startsWith('data:'))return value;
  const comma=value.indexOf(','),meta=value.slice(5,comma),bytes=atob(value.slice(comma+1));
- return URL.createObjectURL(new Blob([Uint8Array.from(bytes,c=>c.charCodeAt(0))],{type:meta.split(';')[0]}));
+ const data=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)data[i]=bytes.charCodeAt(i);
+ return URL.createObjectURL(new Blob([data],{type:meta.split(';')[0]}));
 }
 profile.atlas=localBlob(profile.atlas);profile.demoVideo=localBlob(profile.demoVideo);
 for(const p of projects){if(p.cover)p.cover=localBlob(p.cover);if(p.video)p.video=localBlob(p.video);}
