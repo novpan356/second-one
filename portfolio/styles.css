@@ -45,3 +45,5 @@ body:before,#detail-background:after{content:"";position:fixed;inset:0;pointer-e
 @media(min-width:651px) and (max-width:900px){.portrait-figure{width:min(92vw,110svh)}}
 
 .portrait-figure canvas{filter:none}
+
+.character-pin.portrait-baked{background:var(--paper)}
