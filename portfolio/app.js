@@ -7,15 +7,16 @@ function localBlob(value){
  return URL.createObjectURL(new Blob([data],{type:meta.split(';')[0]}));
 }
 profile.atlas=localBlob(profile.atlas);profile.demoVideo=localBlob(profile.demoVideo);
-for(const p of projects){if(p.cover)p.cover=localBlob(p.cover);if(p.video)p.video=localBlob(p.video);}
+for(const p of projects){if(p.cover)p.cover=localBlob(p.cover);if(p.preview)p.preview=localBlob(p.preview);if(p.video)p.video=localBlob(p.video);}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const $=s=>document.querySelector(s), escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const type=p=>p.kind==='video'?'影像':'摄影';
 const find=id=>projects.find(p=>p.id===id);
-function cover(p,extra=''){
+function cover(p,extra='',full=false){
  if(!p)return '<span class="cover" aria-hidden="true"></span>';
  const label=escapeHTML(p.title+' · '+type(p));
- if(p.cover)return `<span class="cover ${extra}"><img src="${escapeHTML(p.cover)}" alt="${label}" loading="lazy" draggable="false"></span>`;
+ if(!full&&p.preview)return `<span class="cover ${extra}"><img src="${escapeHTML(p.preview)}" alt="${label}" decoding="async" loading="${extra==='gallery'?'eager':'lazy'}" fetchpriority="low" draggable="false"></span>`;
+ if(p.cover)return `<span class="cover ${extra}"${full&&p.preview?' style="background-image:url('+escapeHTML(p.preview)+');background-size:cover;background-position:center"':''}><img src="${escapeHTML(p.cover)}" alt="${label}" decoding="async" loading="${full?'eager':'lazy'}" draggable="false"></span>`;
  const [x,y]=p.cell;
  return `<span class="cover ${extra}"><svg viewBox="${x} ${y} 1 1" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${label}"><image href="${escapeHTML(profile.atlas)}" x="0" y="0" width="3" height="2" preserveAspectRatio="none"/></svg></span>`;
 }
@@ -28,7 +29,7 @@ let offset=innerWidth<=650?0:.5,target=offset,velocity=0,dragging=false,hovering
 let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,galleryTop=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const galleryProjects=[...projects,...projects];
-world.innerHTML=galleryProjects.map((p,i)=>`<button class="gallery-card" data-project="${p.id}" data-gallery-index="${i}" aria-label="查看${type(p)}：${escapeHTML(p.title)}">${cover(p)}<span class="gallery-badge"><span>${p.kind==='video'?'▷':'↗'}</span><b>${escapeHTML(p.english)}</b></span></button>`).join('');
+world.innerHTML=galleryProjects.map((p,i)=>`<button class="gallery-card" data-project="${p.id}" data-gallery-index="${i}" aria-label="查看${type(p)}：${escapeHTML(p.title)}">${cover(p,'gallery')}<span class="gallery-badge"><span>${p.kind==='video'?'▷':'↗'}</span><b>${escapeHTML(p.english)}</b></span></button>`).join('');
 const cards=[...world.children],hoverStates=cards.map(()=>({rx:0,ry:0,tx:0,ty:0,lift:0,scale:1}));
 function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;galleryTop=$('.hero').getBoundingClientRect().top+scrollY;storyH=$('.story-track').offsetHeight;requestFrame();}
 function draw(now){
@@ -112,7 +113,7 @@ function fillDetail(p){
  currentProject=p;zoomed=false;$('#zoom-image').setAttribute('aria-pressed','false');$('#zoom-image').textContent='放大图片 ＋';$('#zoom-image').hidden=p.kind==='video';
  $('#detail-number').textContent=String(projects.indexOf(p)+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0');$('#detail-type').textContent=type(p)+' / SELECTED PROJECT';$('#detail-title').textContent=p.title;$('#detail-english').textContent=p.english;$('#detail-description').textContent=p.description;
  $('#detail-meta').innerHTML=`<dt>年份</dt><dd>${escapeHTML(p.year)}</dd><dt>类别</dt><dd>${type(p)}</dd><dt>参与角色</dt><dd>${escapeHTML(p.role)}</dd>`;$('#detail-note').textContent=p.note||'';
- updateProjectTheme(p);const visual=$('#detail-visual');visual.classList.remove('zoomed');visual.innerHTML=cover(p)+(p.kind==='video'?'<button class="video-play" aria-label="播放短片"><span>▷</span><small>播放短片</small></button>':'');
+ updateProjectTheme(p);const visual=$('#detail-visual');visual.classList.remove('zoomed');visual.innerHTML=cover(p,'',true)+(p.kind==='video'?'<button class="video-play" aria-label="播放短片"><span>▷</span><small>播放短片</small></button>':'');
  $('#detail-caption').textContent=p.kind==='video'?'FILM / '+(p.duration||'VIDEO'):'PHOTOGRAPH / '+p.year;
 }
 async function animateShared(p,source,opening=true){
@@ -159,7 +160,7 @@ function revealName(open){heading.classList.toggle('is-revealed',open);nameButto
 nameButton.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'){nameInside=true;revealName(true);}});nameButton.addEventListener('pointerleave',()=>{nameInside=false;if(!namePinned)revealName(false);});
 nameButton.addEventListener('focus',()=>revealName(true));nameButton.addEventListener('blur',()=>{namePinned=false;if(!nameInside)revealName(false);});
 nameButton.addEventListener('click',e=>{if(matchMedia('(hover:none)').matches||e.detail===0){namePinned=!namePinned;revealName(namePinned||nameInside);}});
-for(const p of projects)PortfolioColor.project(p,profile);
+// Analyse original artwork colours only when its detail view is opened.
 renderProjects();measure();
 
 for(const [key,selector] of Object.entries({tagline:'.hero-heading .eyebrow',collection:'.title-subtitle em',heroNote:'#hero-note',storyTitle:'.story-copy h2',storyText:'.story-copy>p:not(.eyebrow)',aboutTitle:'.about-copy h2'})){if(typeof profile[key]==='string')document.querySelector(selector).textContent=profile[key];}
