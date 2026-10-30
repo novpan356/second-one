@@ -94,7 +94,7 @@ function filtered(){return projects.filter(p=>(filter==='all'||p.kind===filter)&
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}}),{threshold:.06});
 function renderProjects(){
  const list=filtered(),holder=$('#projects');observer.disconnect();holder.className='project-grid'+(view==='list'?' list-view':'');
- holder.innerHTML=list.map(p=>`<article class="project-card ${reduced.matches||view==='list'?'':'reveal'}"><button class="project-image-button" data-project="${p.id}" data-grid-project="${p.id}" aria-label="查看${type(p)}：${escapeHTML(p.title)}"><div class="project-thumb">${cover(p)}<span class="media-badge">${p.kind==='video'?'▷ 影像':'摄影'}${p.duration?' · '+escapeHTML(p.duration):''}</span><span class="thumb-arrow" aria-hidden="true">↗</span></div></button><div class="project-caption"><div><h3><a href="#project-${p.id}" data-project="${p.id}">${escapeHTML(p.title)}</a></h3><p>${escapeHTML(p.english)} / ${type(p)}</p></div><span>${escapeHTML(p.year)}</span></div></article>`).join('');
+ holder.innerHTML=list.map(p=>`<article class="project-card ${reduced.matches||view==='list'?'':'reveal'}"><button class="project-image-button" data-project="${p.id}" data-grid-project="${p.id}" aria-label="查看${type(p)}：${escapeHTML(p.title)}"><div class="project-thumb">${cover(p)}<span class="media-badge">${p.kind==='video'?'▷ 影像':'摄影'}${p.duration?' · '+escapeHTML(p.duration):''}</span><span class="thumb-arrow" aria-hidden="true">↗</span></div></button><div class="project-caption"><div><h3><a href="#project-${p.id}" data-project="${p.id}">${escapeHTML(p.title)}</a></h3><p class="project-subtitle">${escapeHTML(p.english)} / ${type(p)}</p>${p.description?`<p class="project-summary">${escapeHTML(p.description)}</p>`:""}</div><span>${escapeHTML(p.year)}</span></div></article>`).join('');
  holder.querySelectorAll('.reveal').forEach(el=>observer.observe(el));$('#empty').hidden=list.length>0;$('#shown-count').textContent=String(list.length).padStart(2,'0')+' SELECTED PROJECTS';$('#result-status').textContent=`显示 ${list.length} 件作品`;
  document.querySelectorAll('[data-filter]').forEach(b=>{const active=b.dataset.filter===filter;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
 }
@@ -167,3 +167,21 @@ for(const [key,selector] of Object.entries({tagline:'.hero-heading .eyebrow',col
 
 if(profile.bio)document.querySelector('meta[name="description"]').content=profile.bio;
 if(!profile.isDemo){const note=document.querySelector('.demo-note');if(note)note.hidden=true;}
+
+// Each palette begins and ends in the existing paper colour so scrolling never cuts between surfaces.
+(()=>{
+ const archive=document.querySelector('#archive');
+ if(!archive)return;
+ const palettes=[['paper','暖白','#eeeae2'],['sage','雾绿','#e2e8e1'],['graphite','石墨','#293139']];
+ const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','作品区背景配色');
+ control.innerHTML=palettes.map(([id,label,colour])=>`<button type="button" data-archive-palette="${id}" aria-label="${label}背景" title="${label}" aria-pressed="false" style="--swatch:${colour}"><i aria-hidden="true"></i><span>${label}</span></button>`).join('');
+ document.querySelector('.archive-tools').prepend(control);
+ function select(id){
+  if(!palettes.some(p=>p[0]===id))id='paper';
+  archive.dataset.palette=id;
+  control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===id)));
+ }
+ let saved;try{saved=localStorage.getItem('ray-pan-archive-palette')}catch{}
+ select(new URLSearchParams(location.search).get('palette')||saved||'paper');
+ control.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-palette',b.dataset.archivePalette)}catch{}});
+})();
