@@ -6,11 +6,13 @@ function localBlob(value){
  const data=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)data[i]=bytes.charCodeAt(i);
  return URL.createObjectURL(new Blob([data],{type:meta.split(';')[0]}));
 }
+for(const key of ['aboutImage','cameraImage'])if(profile[key])profile[key]=localBlob(profile[key]);
 profile.atlas=localBlob(profile.atlas);profile.demoVideo=localBlob(profile.demoVideo);
 for(const p of projects){if(p.cover)p.cover=localBlob(p.cover);if(p.preview)p.preview=localBlob(p.preview);if(p.video)p.video=localBlob(p.video);}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const $=s=>document.querySelector(s), escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const type=p=>p.kind==='video'?'影像':'摄影';
+const copy=(key,fallback)=>window.PortfolioContent?.get(profile,key,fallback)??fallback;
+const type=p=>p.kind==='video'?copy('filterVideo','影像'):copy('filterImage','摄影');
 const find=id=>projects.find(p=>p.id===id);
 function cover(p,extra='',full=false){
  if(!p)return '<span class="cover" aria-hidden="true"></span>';
@@ -26,12 +28,12 @@ let entranceProgress=document.documentElement.classList.contains('intro-pending'
 window.addEventListener('portfolio-enter-progress',e=>{entranceProgress=e.detail;requestFrame();});
 let drift=.075,driftTarget=.075,hoveredCard=-1,focusedCard=-1;
 let offset=innerWidth<=650?0:.5,target=offset,velocity=0,dragging=false,hovering=false,focused=false,userPaused=false,dragDistance=0,lastPointer=0,ignoreClickUntil=0;
-let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,galleryTop=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
+let vw=innerWidth,vh=innerHeight,heroH=0,storyH=0,archiveTop=0,galleryTop=0,scrollPos=scrollY,lastTime=performance.now(),frame=null,documentVisible=true,galleryInteractive=true;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const galleryProjects=[...projects,...projects];
-world.innerHTML=galleryProjects.map((p,i)=>`<button class="gallery-card" data-project="${p.id}" data-gallery-index="${i}" aria-label="查看${type(p)}：${escapeHTML(p.title)}">${cover(p,'gallery')}<span class="gallery-badge"><span>${p.kind==='video'?'▷':'↗'}</span><b>${escapeHTML(p.english)}</b></span></button>`).join('');
+world.innerHTML=galleryProjects.map((p,i)=>`<button class="gallery-card" data-project="${p.id}" data-gallery-index="${i}" aria-label="查看${escapeHTML(type(p))}：${escapeHTML(p.title)}">${cover(p,'gallery')}<span class="gallery-badge"><span>${p.kind==='video'?'▷':'↗'}</span><b>${escapeHTML(p.english)}</b></span></button>`).join('');
 const cards=[...world.children],hoverStates=cards.map(()=>({rx:0,ry:0,tx:0,ty:0,lift:0,scale:1}));
-function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;galleryTop=$('.hero').getBoundingClientRect().top+scrollY;storyH=$('.story-track').offsetHeight;requestFrame();}
+function measure(){vw=innerWidth;vh=innerHeight;heroH=$('.hero').offsetHeight;galleryTop=$('.hero').getBoundingClientRect().top+scrollY;storyH=$('.story-track').offsetHeight;archiveTop=$('#archive').offsetTop;requestFrame();}
 function draw(now){
  frame=null;if(!documentVisible)return;
  const dt=Math.min((now-lastTime)/1000||.016,.08);lastTime=now;
@@ -44,7 +46,7 @@ function draw(now){
  if(!dragging&&!reduced.matches){target+=velocity*dt;velocity*=Math.exp(-5*dt);}
  offset=reduced.matches?target:lerp(offset,target,Math.min(1,dt*9));
  if(galleryProjects.length&&Math.abs(target)>10000){const k=Math.floor(target/galleryProjects.length)*galleryProjects.length;target-=k;offset-=k;}
- stage.style.visibility=inGallery?'visible':'hidden';stage.style.opacity=String((1-exit)*entranceProgress*galleryReveal);stage.inert=!inGallery||entranceProgress<1||galleryReveal<.95;
+ stage.style.visibility=inGallery?'visible':'hidden';stage.style.opacity=String((1-exit)*entranceProgress*galleryReveal*(1-smooth(clamp((scrollPos+vh-archiveTop)/(vh*.6),0,1))));stage.inert=!inGallery||entranceProgress<1||galleryReveal<.95;
  const radius=mobile?vw*.85+230:Math.max(760,vw*.66),arcWidth=mobile?188:252.5,arcHeight=arcWidth*1.37,baseZ=mobile?-360:-430,step=mobile?.46:.24;
  let hoverAnimating=false;const floating=entranceProgress===1&&!userPaused&&!reduced.matches&&inGallery&&!currentProject&&progress<.8;
  for(const [i,card]of cards.entries()){
@@ -94,8 +96,8 @@ function filtered(){return projects.filter(p=>(filter==='all'||p.kind===filter)&
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}}),{threshold:.06});
 function renderProjects(){
  const list=filtered(),holder=$('#projects');observer.disconnect();holder.className='project-grid'+(view==='list'?' list-view':'');
- holder.innerHTML=list.map(p=>`<article class="project-card ${reduced.matches||view==='list'?'':'reveal'}"><button class="project-image-button" data-project="${p.id}" data-grid-project="${p.id}" aria-label="查看${type(p)}：${escapeHTML(p.title)}"><div class="project-thumb">${cover(p)}<span class="media-badge">${p.kind==='video'?'▷ 影像':'摄影'}${p.duration?' · '+escapeHTML(p.duration):''}</span><span class="thumb-arrow" aria-hidden="true">↗</span></div></button><div class="project-caption"><div><h3><a href="#project-${p.id}" data-project="${p.id}">${escapeHTML(p.title)}</a></h3><p class="project-subtitle">${escapeHTML(p.english)} / ${type(p)}</p>${p.description?`<p class="project-summary">${escapeHTML(p.description)}</p>`:""}</div><span>${escapeHTML(p.year)}</span></div></article>`).join('');
- holder.querySelectorAll('.reveal').forEach(el=>observer.observe(el));$('#empty').hidden=list.length>0;$('#shown-count').textContent=String(list.length).padStart(2,'0')+' SELECTED PROJECTS';$('#result-status').textContent=`显示 ${list.length} 件作品`;
+ holder.innerHTML=list.map(p=>`<article class="project-card ${reduced.matches||view==='list'?'':'reveal'}"><button class="project-image-button" data-project="${p.id}" data-grid-project="${p.id}" aria-label="查看${escapeHTML(type(p))}：${escapeHTML(p.title)}"><div class="project-thumb">${cover(p)}<span class="media-badge">${p.kind==='video'?'▷ '+escapeHTML(type(p)):escapeHTML(type(p))}${p.duration?' · '+escapeHTML(p.duration):''}</span><span class="thumb-arrow" aria-hidden="true">↗</span></div></button><div class="project-caption"><div><h3><a href="#project-${p.id}" data-project="${p.id}">${escapeHTML(p.title)}</a></h3><p class="project-subtitle">${escapeHTML(p.english)} / ${escapeHTML(type(p))}</p>${p.description?`<p class="project-summary">${escapeHTML(p.description)}</p>`:""}</div><span>${escapeHTML(p.year)}</span></div></article>`).join('');
+ holder.querySelectorAll('.reveal').forEach(el=>observer.observe(el));$('#empty').hidden=list.length>0;$('#shown-count').textContent=String(list.length).padStart(2,'0')+' '+copy('selectedSuffix','SELECTED PROJECTS');$('#result-status').textContent=`显示 ${list.length} 件作品`;
  document.querySelectorAll('[data-filter]').forEach(b=>{const active=b.dataset.filter===filter;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
 }
 function announce(text){$('#announcement').textContent=text;}
@@ -110,11 +112,11 @@ async function updateProjectTheme(p){
  const theme=await PortfolioColor.project(p,profile);if(generation===themeGeneration&&currentProject?.id===p.id&&!closing)applyTheme(theme);
 }
 function fillDetail(p){
- currentProject=p;zoomed=false;$('#zoom-image').setAttribute('aria-pressed','false');$('#zoom-image').textContent='放大图片 ＋';$('#zoom-image').hidden=p.kind==='video';
- $('#detail-number').textContent=String(projects.indexOf(p)+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0');$('#detail-type').textContent=type(p)+' / SELECTED PROJECT';$('#detail-title').textContent=p.title;$('#detail-english').textContent=p.english;$('#detail-description').textContent=p.description;
- $('#detail-meta').innerHTML=`<dt>年份</dt><dd>${escapeHTML(p.year)}</dd><dt>类别</dt><dd>${type(p)}</dd><dt>参与角色</dt><dd>${escapeHTML(p.role)}</dd>`;$('#detail-note').textContent=p.note||'';
- updateProjectTheme(p);const visual=$('#detail-visual');visual.classList.remove('zoomed');visual.innerHTML=cover(p,'',true)+(p.kind==='video'?'<button class="video-play" aria-label="播放短片"><span>▷</span><small>播放短片</small></button>':'');
- $('#detail-caption').textContent=p.kind==='video'?'FILM / '+(p.duration||'VIDEO'):'PHOTOGRAPH / '+p.year;
+ currentProject=p;zoomed=false;$('#zoom-image').setAttribute('aria-pressed','false');$('#zoom-image').textContent=copy('zoomIn','放大图片 ＋');$('#zoom-image').hidden=p.kind==='video';
+ $('#detail-number').textContent=String(projects.indexOf(p)+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0');$('#detail-type').textContent=type(p)+' / '+copy('detailSelected','SELECTED PROJECT');$('#detail-title').textContent=p.title;$('#detail-english').textContent=p.english;$('#detail-description').textContent=p.description;
+ $('#detail-meta').innerHTML=`<dt>${escapeHTML(copy('metaYear','年份'))}</dt><dd>${escapeHTML(p.year)}</dd><dt>${escapeHTML(copy('metaCategory','类别'))}</dt><dd>${escapeHTML(type(p))}</dd><dt>${escapeHTML(copy('metaRole','参与角色'))}</dt><dd>${escapeHTML(p.role)}</dd>`;$('#detail-note').textContent=p.note||'';
+ updateProjectTheme(p);const visual=$('#detail-visual');visual.classList.remove('zoomed');visual.innerHTML=cover(p,'',true)+(p.kind==='video'?'<button class="video-play" aria-label="播放短片"><span>▷</span><small>'+escapeHTML(copy('playVideo','播放短片'))+'</small></button>':'');
+ $('#detail-caption').textContent=p.kind==='video'?copy('filmCaption','FILM')+' / '+(p.duration||'VIDEO'):copy('photoCaption','PHOTOGRAPH')+' / '+p.year;
 }
 async function animateShared(p,source,opening=true){
  if(reduced.matches)return;
@@ -138,22 +140,22 @@ $('#project-dialog').addEventListener('close',()=>{sharedAnimation?.cancel();$('
 $('#project-dialog').addEventListener('cancel',e=>{e.preventDefault();closeProject();});$('#close-project').addEventListener('click',closeProject);$('#detail-home').addEventListener('click',e=>{e.preventDefault();closeProject();});
 function cycleProject(step){if(!currentProject||closing)return;sharedAnimation?.cancel();$('#detail-visual video')?.pause();const list=filtered().length?filtered():projects;let index=list.findIndex(p=>p.id===currentProject.id);const next=list[(index+step+list.length)%list.length];fillDetail(next);modalSource=document.querySelector(`[data-grid-project="${next.id}"] .project-thumb`);if(!reduced.matches)$('#detail-visual').animate([{opacity:.1,transform:`translateX(${step*15}px)`},{opacity:1,transform:'none'}],{duration:400,easing:'ease-out'});announce(next.title);}
 $('#previous-project').addEventListener('click',()=>cycleProject(-1));$('#next-project').addEventListener('click',()=>cycleProject(1));
-$('#zoom-image').addEventListener('click',()=>{if(!currentProject||currentProject.kind!=='image')return;zoomed=!zoomed;$('#detail-visual').classList.toggle('zoomed',zoomed);$('#zoom-image').setAttribute('aria-pressed',String(zoomed));$('#zoom-image').textContent=zoomed?'还原图片 －':'放大图片 ＋';if(!zoomed)$('#detail-visual .cover').style.transformOrigin='50% 50%';});
+$('#zoom-image').addEventListener('click',()=>{if(!currentProject||currentProject.kind!=='image')return;zoomed=!zoomed;$('#detail-visual').classList.toggle('zoomed',zoomed);$('#zoom-image').setAttribute('aria-pressed',String(zoomed));$('#zoom-image').textContent=zoomed?copy('zoomOut','还原图片 －'):copy('zoomIn','放大图片 ＋');if(!zoomed)$('#detail-visual .cover').style.transformOrigin='50% 50%';});
 $('#detail-visual').addEventListener('pointermove',e=>{if(!zoomed)return;const r=e.currentTarget.getBoundingClientRect();const image=$('#detail-visual .cover');image.style.transformOrigin=`${clamp((e.clientX-r.left)/r.width*100,0,100)}% ${clamp((e.clientY-r.top)/r.height*100,0,100)}%`;});
-async function playVideo(){if(!currentProject||currentProject.kind!=='video')return;const holder=$('#detail-visual');holder.innerHTML='<video controls controlslist="nodownload" playsinline preload="metadata" aria-label="作品视频播放器"></video>';const video=holder.querySelector('video');video.addEventListener('contextmenu',e=>e.preventDefault());video.src=currentProject.video||profile.demoVideo;let lastTheme=-10;const sample=()=>{if(!currentProject||holder.querySelector('video')!==video)return;const theme=PortfolioColor.video(video);if(theme)applyTheme(theme);};video.addEventListener('loadeddata',sample,{once:true});video.addEventListener('seeked',sample);video.addEventListener('timeupdate',()=>{if(Math.abs(video.currentTime-lastTheme)>2.5){lastTheme=video.currentTime;sample();}});video.addEventListener('error',()=>{if(holder.querySelector('video')!==video)return;holder.innerHTML='<div class="media-error"><span>这段视频暂时无法播放。</span><button class="retry-video">重新加载 ↗</button></div>';});try{await video.play();}catch{if(video.error)return;video.setAttribute('controls','');}}
-function showContact(){const email=profile.email?.trim();$('#contact-description').textContent=email?'摄影、短片，或一个还没有成形的想法。期待听到你的故事。':'感谢你的关注。联系方式暂未公开。';$('#contact-email').textContent=email||'';if(email)$('#contact-email').href='mailto:'+email;else $('#contact-email').removeAttribute('href');$('#copy-email').hidden=!email;$('#contact-dialog').showModal();}
-$('#copy-email').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(profile.email);$('#copy-email').textContent='已复制 ✓';announce('邮箱已复制');}catch{$('#copy-email').textContent='请选中邮箱手动复制';}});
+async function playVideo(){if(!currentProject||currentProject.kind!=='video')return;const holder=$('#detail-visual');holder.innerHTML='<video controls controlslist="nodownload" playsinline preload="metadata" aria-label="作品视频播放器"></video>';const video=holder.querySelector('video');video.addEventListener('contextmenu',e=>e.preventDefault());video.src=currentProject.video||profile.demoVideo;let lastTheme=-10;const sample=()=>{if(!currentProject||holder.querySelector('video')!==video)return;const theme=PortfolioColor.video(video);if(theme)applyTheme(theme);};video.addEventListener('loadeddata',sample,{once:true});video.addEventListener('seeked',sample);video.addEventListener('timeupdate',()=>{if(Math.abs(video.currentTime-lastTheme)>2.5){lastTheme=video.currentTime;sample();}});video.addEventListener('error',()=>{if(holder.querySelector('video')!==video)return;holder.innerHTML='<div class="media-error"><span>'+escapeHTML(copy('videoError','这段视频暂时无法播放。'))+'</span><button class="retry-video">'+escapeHTML(copy('videoRetry','重新加载 ↗'))+'</button></div>';});try{await video.play();}catch{if(video.error)return;video.setAttribute('controls','');}}
+function showContact(){const email=profile.email?.trim();$('#contact-description').textContent=email?copy('contactDescription','摄影、短片，或一个还没有成形的想法。期待听到你的故事。'):copy('contactPrivate','感谢你的关注。联系方式暂未公开。');$('#contact-email').textContent=email||'';if(email)$('#contact-email').href='mailto:'+email;else $('#contact-email').removeAttribute('href');$('#copy-email').hidden=!email;$('#contact-dialog').showModal();}
+$('#copy-email').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(profile.email);$('#copy-email').textContent=copy('emailCopied','已复制 ✓');announce('邮箱已复制');}catch{$('#copy-email').textContent=copy('emailCopyFailed','请选中邮箱手动复制');}});
 document.addEventListener('click',e=>{const b=e.target.closest('button,a');if(!b)return;if(b.dataset.project){e.preventDefault();openProject(find(b.dataset.project),b);}else if(b.hasAttribute('data-filter')){filter=b.dataset.filter;renderProjects();}else if(b.hasAttribute('data-view')){view=b.dataset.view;renderProjects();}else if(b.hasAttribute('data-contact'))showContact();else if(b.hasAttribute('data-close-contact'))$('#contact-dialog').close();else if(b.matches('.video-play,.retry-video'))playVideo();});
 document.addEventListener('keydown',e=>{if(!currentProject||e.target.matches('input,textarea,video'))return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();cycleProject(e.key==='ArrowRight'?1:-1);}});
 $('#search').addEventListener('input',e=>{query=e.target.value.trim().slice(0,100);renderProjects();});$('#clear-search').addEventListener('click',()=>{filter='all';query='';$('#search').value='';renderProjects();});
 $('#contact-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();});
 for(const brand of document.querySelectorAll('.brand')){const node=[...brand.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);if(node)node.nodeValue=profile.name;}
-$('.hero-heading .eyebrow').textContent='PHOTOGRAPHY / FILM / VISUAL STORIES';$('#hero-name').textContent=profile.name;$('.about-signature>span').textContent=profile.name;$('.about-signature small').textContent=profile.role;if($('#footer-name'))$('#footer-name').textContent=profile.name;document.title=profile.name+' — 摄影与影像作品集';
-$('#bio').textContent=profile.bio;$('#year').textContent=new Date().getFullYear();$('#about-image').innerHTML=cover(projects.find(p=>p.id==='whisper')||projects.find(p=>p.kind==='image')||projects[0]);
+$('.hero-heading .eyebrow').textContent='PHOTOGRAPHY / FILM / VISUAL STORIES';$('#hero-name').textContent=profile.name;$('.about-signature>span').textContent=profile.name;$('.about-signature small').textContent=profile.role;if($('#footer-name'))$('#footer-name').textContent=profile.name;document.title=profile.name+' — '+copy('pageTitle','摄影与影像作品集');
+$('#bio').textContent=profile.bio;$('#year').textContent=new Date().getFullYear();$('#about-image').innerHTML=profile.aboutImage?`<span class="cover"><img src="${escapeHTML(profile.aboutImage)}" alt="${escapeHTML(profile.name)}" loading="lazy"></span>`:cover(projects.find(p=>p.id==='whisper')||projects.find(p=>p.kind==='image')||projects[0]);
 $('#total-count').textContent=String(projects.length).padStart(2,'0');document.querySelector('nav a span').textContent=String(projects.length).padStart(2,'0');
 for(const b of document.querySelectorAll('[data-filter]'))b.querySelector('sup').textContent=String(b.dataset.filter==='all'?projects.length:projects.filter(p=>p.kind===b.dataset.filter).length).padStart(2,'0');
 const featured=projects[0],featuredButton=$('.story-second [data-project]');
-if(featured){featuredButton.dataset.project=featured.id;$('.story-second h2').textContent=featured.title+'。';$('.story-second .eyebrow').textContent=featured.kind==='video'?'02 / FEATURED FILM':'02 / FEATURED PHOTOGRAPH';$('.story-second>p:not(.eyebrow)').textContent=featured.description;featuredButton.firstChild.nodeValue=featured.kind==='video'?'查看短片 ':'查看图片 ';$('.story-meta').textContent=featured.year+' / '+type(featured)+(profile.isDemo?' / DEMO':'');}
+if(featured){featuredButton.dataset.project=featured.id;$('.story-second h2').textContent=featured.title+'。';$('.story-second .eyebrow').textContent=featured.kind==='video'?copy('featuredFilm','02 / FEATURED FILM'):copy('featuredPhoto','02 / FEATURED PHOTOGRAPH');$('.story-second>p:not(.eyebrow)').textContent=featured.description;featuredButton.firstChild.nodeValue=featured.kind==='video'?copy('viewFilm','查看短片 '):copy('viewPhoto','查看图片 ');$('.story-meta').textContent=featured.year+' / '+type(featured)+(profile.isDemo?' / DEMO':'');}
 else{featuredButton.disabled=true;$('.story-second h2').textContent='等待下一段故事。';}
 const nameButton=$('.name-reveal'),heading=$('.hero-heading');let namePinned=false,nameInside=false;
 function revealName(open){heading.classList.toggle('is-revealed',open);nameButton.setAttribute('aria-expanded',String(open));$('#title-subtitle').setAttribute('aria-hidden',String(!open));}
@@ -168,31 +170,23 @@ for(const [key,selector] of Object.entries({tagline:'.hero-heading .eyebrow',col
 if(profile.bio)document.querySelector('meta[name="description"]').content=profile.bio;
 if(!profile.isDemo){const note=document.querySelector('.demo-note');if(note)note.hidden=true;}
 
-// Fourteen hues share one aligned texture; only colour and contrast change.
+// A viewport-anchored surface fades as a whole; the texture never travels with the cards.
 (()=>{
  const archive=document.querySelector('#archive');if(!archive)return;
- const hues=[
-  ['red','红','#f1e2e2','#291c20'],['orange','橙','#f3e6d8','#2a211a'],
-  ['yellow','黄','#f2edcf','#272518'],['green','绿','#e1ebdf','#1b2720'],
-  ['cyan','青','#deedec','#19272a'],['blue','蓝','#e1e8f2','#1b202b'],
-  ['violet','紫','#eae2f1','#241d2c']
- ];
- const palettes=hues.flatMap(([hue,label,light,dark])=>[
-  {id:hue+'-light',label:'浅'+label,colour:light,mode:'light'},
-  {id:hue+'-dark',label:'深'+label,colour:dark,mode:'dark'}
- ]);
- const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','背景配色，七色各分深浅，共十四种');
- control.innerHTML=['light','dark'].map(mode=>`<span class="palette-mode" aria-hidden="true">${mode==='light'?'浅色':'深色'}</span>`+palettes.filter(p=>p.mode===mode).map(p=>`<button type="button" data-archive-palette="${p.id}" aria-label="${p.label}背景" title="${p.label}" aria-pressed="false" style="--swatch:${p.colour}"><i aria-hidden="true"></i><span class="sr-only">${p.label}</span></button>`).join('')).join('');
- document.querySelector('.archive-tools').prepend(control);
- function select(id){
-  // Old shared links and saved preferences still open the closest new palette.
-  id=({paper:'orange-light',sage:'green-light',graphite:'blue-dark'})[id]||id;
-  const palette=palettes.find(p=>p.id===id)||palettes.find(p=>p.id==='blue-dark');
-  archive.dataset.palette=palette.id;archive.dataset.appearance=palette.mode;
-  archive.style.setProperty('--collection-tone',palette.colour);
-  control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===palette.id)));
- }
- let saved;try{saved=localStorage.getItem('ray-pan-archive-palette')}catch{}
- select(new URLSearchParams(location.search).get('palette')||saved||'blue-dark');
- control.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-palette',b.dataset.archivePalette)}catch{}});
+ const backdrop=document.createElement('div');backdrop.id='collection-backdrop';backdrop.setAttribute('aria-hidden','true');document.body.prepend(backdrop);
+ const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','作品背景，黑白两色');
+ control.innerHTML=['white','black'].map(id=>`<button type="button" data-archive-palette="${id}" aria-pressed="false"><i style="--swatch:${id==="white"?"#fff":"#171717"}" aria-hidden="true"></i><span>${escapeHTML(copy(id==='white'?'paletteWhite':'paletteBlack',id==='white'?'白色':'黑色'))}</span></button>`).join('');document.querySelector('.archive-tools').prepend(control);
+ let palette='white',raf=0,mix=0,last=0;const reduceSurface=matchMedia('(prefers-reduced-motion: reduce)');
+ const smooth=n=>{n=Math.max(0,Math.min(1,n));return n*n*(3-2*n)};
+ function paint(now){raf=0;const dt=last?Math.min(.06,(now-last)/1000):1/60;last=now;const target=palette==='black'?1:0;mix=reduceSurface.matches?target:mix+(target-mix)*(1-Math.exp(-12*dt));if(Math.abs(mix-target)<.0001)mix=target;backdrop.style.setProperty('--surface-dark',mix);const rect=archive.getBoundingClientRect(),height=innerHeight,phase=smooth((height-rect.top)/(height*.8))*smooth(rect.bottom/(height*.8));backdrop.style.opacity=String(phase);document.documentElement.style.setProperty('--flow-dark',phase*mix);archive.dataset.backgroundProgress=phase.toFixed(4);if(mix!==target)request();}
+ function request(){if(!raf)raf=requestAnimationFrame(paint)}
+ function select(id){palette=id==='black'?'black':'white';archive.dataset.palette=palette;backdrop.dataset.palette=palette;control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===palette)));request();}
+ // The redesign starts in white even if an older colourful preference was saved.
+ let saved;try{saved=localStorage.getItem('ray-pan-archive-bw')}catch{}
+ select(new URLSearchParams(location.search).get('palette')||saved||'white');
+ control.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-bw',palette)}catch{}});
+ window.addEventListener('scroll',request,{passive:true});window.addEventListener('resize',request);window.addEventListener('load',request);window.addEventListener('portfolio-enter-progress',request);if(window.ResizeObserver)new ResizeObserver(request).observe(archive);request();
 })();
+window.PortfolioContent?.apply(profile);
+for(const mode of ['all','video','image'])window.PortfolioContent?.text(document.querySelector(`[data-filter="${mode}"]`),copy({all:'filterAll',video:'filterVideo',image:'filterImage'}[mode],{all:'全部 ',video:'影像',image:'摄影'}[mode]));
+if(profile.cameraImage){const image=new Image();image.src=profile.cameraImage;image.className='camera-accent';image.alt='';document.querySelector('.camera-accent')?.replaceWith(image);}
