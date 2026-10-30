@@ -188,7 +188,7 @@
  // Fast-start, video-only AVC files from our offline compositor. Other containers
  // and unsupported browsers fall back to the native video without clearing the last frame.
  function createFrameDecoder(url,config,canvas,present,fallback){
-  let workers=[],metadata,bytes=new Uint8Array(65536),length=0,wanted=0,shown=-1,closed=false,serial=0,presented=0,pending=new Set(),controller=new AbortController();
+  let workers=[],metadata,bytes=new Uint8Array(65536),length=0,wanted=0,shown=-1,closed=false,serial=0,presented=0,pending=new Set(),controller=new AbortController(),rangeController=null,rangeDisabled=!/^https?:$/.test(new URL(url,location.href).protocol),encoded=new Map();
   const workerCode=()=>{let decoder,output,target;self.onmessage=async({data})=>{try{
    if(data.init){decoder=new VideoDecoder({output:frame=>{if(Math.abs(frame.timestamp-target)<2){output?.close();output=frame;}else frame.close();},error:error=>self.postMessage({error:error.message})});decoder.configure(data.init);return;}
    target=Math.round(data.index*1e6/data.fps);output=null;
@@ -197,7 +197,7 @@
    const picture=output;output=null;self.postMessage({id:data.id,index:data.index,picture},[picture]);
   }catch(error){output?.close();self.postMessage({error:error.message});}};};
   function fail(){if(closed)return;close();fallback();}
-  function close(){closed=true;controller.abort();for(const slot of workers)slot.worker.terminate();}
+  function close(){closed=true;controller.abort();rangeController?.abort();for(const slot of workers)slot.worker.terminate();}
   const string=(data,start,n)=>String.fromCharCode(...data.subarray(start,start+n));
   function boxes(data,start,end){const out=[],view=new DataView(data.buffer);for(let at=start;at+8<=end;){const size=view.getUint32(at);if(size<8||at+size>end)throw Error('Unsupported MP4 box');out.push({start:at,end:at+size,type:string(data,at+4,4)});at+=size;}return out;}
   function parse(moov){
@@ -222,14 +222,26 @@
    if(closed||!metadata||wanted===shown||pending.has(wanted))return;
    const slot=workers.find(s=>!s.busy);if(!slot)return;
    let key=wanted;while(key>0&&!metadata.sync.has(key))key--;
-   if(metadata.offsets[wanted]+metadata.sizes[wanted]>length)return;
-   const samples=[];for(let i=key;i<=wanted;i++)samples.push({index:i,key:metadata.sync.has(i),data:bytes.slice(metadata.offsets[i],metadata.offsets[i]+metadata.sizes[i]).buffer});
+   if(metadata.offsets[wanted]+metadata.sizes[wanted]>length&&!Array.from({length:wanted-key+1},(_,i)=>encoded.has(key+i)).every(Boolean)){if(metadata.offsets[wanted]+metadata.sizes[wanted]-length>262144)fetchRange(key);return;}
+   const samples=[];for(let i=key;i<=wanted;i++)samples.push({index:i,key:metadata.sync.has(i),data:(metadata.offsets[i]+metadata.sizes[i]<=length?bytes.slice(metadata.offsets[i],metadata.offsets[i]+metadata.sizes[i]):encoded.get(i).slice()).buffer});
    slot.busy=true;pending.add(wanted);slot.worker.postMessage({id:++serial,index:wanted,fps:config.fps,samples},samples.map(s=>s.data));
+  }
+  async function fetchRange(key){
+   if(closed||rangeDisabled||rangeController)return;
+   let end=key+1;while(end<config.frames&&!metadata.sync.has(end))end++;
+   const start=metadata.offsets[key],last=metadata.offsets[end-1]+metadata.sizes[end-1]-1;
+   rangeController=new AbortController();
+   try{const response=await fetch(url,{headers:{Range:`bytes=${start}-${last}`},priority:'high',signal:rangeController.signal});
+    if(response.status!==206||!response.headers.get('Content-Range')?.startsWith(`bytes ${start}-`)){await response.body?.cancel();rangeDisabled=true;return;}
+    const data=new Uint8Array(await response.arrayBuffer());if(data.length!==last-start+1){rangeDisabled=true;return;}
+    for(let i=key;i<end;i++){encoded.delete(i);encoded.set(i,data.slice(metadata.offsets[i]-start,metadata.offsets[i]-start+metadata.sizes[i]));}
+    while(encoded.size>16)encoded.delete(encoded.keys().next().value);
+   }catch{if(!closed)rangeDisabled=true;}finally{rangeController=null;if(!closed)pump();}
   }
   try{
    const blobURL=URL.createObjectURL(new Blob(['('+workerCode.toString()+')()'],{type:'text/javascript'}));
    workers=Array.from({length:2},()=>{const slot={worker:new Worker(blobURL),busy:false};slot.worker.onerror=fail;slot.worker.onmessage=({data})=>{if(data.error){fail();return;}if(closed){data.picture?.close();return;}slot.busy=false;pending.delete(data.index);if(data.id>presented){presented=data.id;shown=data.index;present(data.index,data.picture);}else data.picture.close();pump();};return slot;});URL.revokeObjectURL(blobURL);
-   (async()=>{const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw Error('Video unavailable');const reader=response.body.getReader();while(!closed){const {done,value}=await reader.read();if(done)break;if(length+value.length>bytes.length){const next=new Uint8Array(Math.max(bytes.length*2,length+value.length));next.set(bytes);bytes=next;}bytes.set(value,length);length+=value.length;
+   (async()=>{const response=await fetch(url,{signal:controller.signal,priority:'low'});if(!response.ok)throw Error('Video unavailable');const reader=response.body.getReader();while(!closed){const {done,value}=await reader.read();if(done)break;if(length+value.length>bytes.length){const next=new Uint8Array(Math.max(bytes.length*2,length+value.length));next.set(bytes);bytes=next;}bytes.set(value,length);length+=value.length;
     if(!metadata){let at=0;const view=new DataView(bytes.buffer);while(at+8<=length){const size=view.getUint32(at);if(size<8)throw Error('Unsupported MP4');if(at+size>length)break;if(string(bytes,at+4,4)==='moov'){metadata=parse({start:at,end:at+size});break;}at+=size;}}
     pump();
    }if(!metadata)throw Error('Missing fast-start metadata');pump();})().catch(()=>{if(!closed)fail();});
