@@ -168,20 +168,31 @@ for(const [key,selector] of Object.entries({tagline:'.hero-heading .eyebrow',col
 if(profile.bio)document.querySelector('meta[name="description"]').content=profile.bio;
 if(!profile.isDemo){const note=document.querySelector('.demo-note');if(note)note.hidden=true;}
 
-// Each palette begins and ends in the existing paper colour so scrolling never cuts between surfaces.
+// Fourteen hues share one aligned texture; only colour and contrast change.
 (()=>{
- const archive=document.querySelector('#archive');
- if(!archive)return;
- const palettes=[['paper','暖白','#eeeae2'],['sage','雾绿','#e2e8e1'],['graphite','石墨','#293139']];
- const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','作品区背景配色');
- control.innerHTML=palettes.map(([id,label,colour])=>`<button type="button" data-archive-palette="${id}" aria-label="${label}背景" title="${label}" aria-pressed="false" style="--swatch:${colour}"><i aria-hidden="true"></i><span>${label}</span></button>`).join('');
+ const archive=document.querySelector('#archive');if(!archive)return;
+ const hues=[
+  ['red','红','#f1e2e2','#291c20'],['orange','橙','#f3e6d8','#2a211a'],
+  ['yellow','黄','#f2edcf','#272518'],['green','绿','#e1ebdf','#1b2720'],
+  ['cyan','青','#deedec','#19272a'],['blue','蓝','#e1e8f2','#1b202b'],
+  ['violet','紫','#eae2f1','#241d2c']
+ ];
+ const palettes=hues.flatMap(([hue,label,light,dark])=>[
+  {id:hue+'-light',label:'浅'+label,colour:light,mode:'light'},
+  {id:hue+'-dark',label:'深'+label,colour:dark,mode:'dark'}
+ ]);
+ const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','背景配色，七色各分深浅，共十四种');
+ control.innerHTML=['light','dark'].map(mode=>`<span class="palette-mode" aria-hidden="true">${mode==='light'?'浅色':'深色'}</span>`+palettes.filter(p=>p.mode===mode).map(p=>`<button type="button" data-archive-palette="${p.id}" aria-label="${p.label}背景" title="${p.label}" aria-pressed="false" style="--swatch:${p.colour}"><i aria-hidden="true"></i><span class="sr-only">${p.label}</span></button>`).join('')).join('');
  document.querySelector('.archive-tools').prepend(control);
  function select(id){
-  if(!palettes.some(p=>p[0]===id))id='paper';
-  archive.dataset.palette=id;
-  control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===id)));
+  // Old shared links and saved preferences still open the closest new palette.
+  id=({paper:'orange-light',sage:'green-light',graphite:'blue-dark'})[id]||id;
+  const palette=palettes.find(p=>p.id===id)||palettes.find(p=>p.id==='blue-dark');
+  archive.dataset.palette=palette.id;archive.dataset.appearance=palette.mode;
+  archive.style.setProperty('--collection-tone',palette.colour);
+  control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===palette.id)));
  }
  let saved;try{saved=localStorage.getItem('ray-pan-archive-palette')}catch{}
- select(new URLSearchParams(location.search).get('palette')||saved||'paper');
+ select(new URLSearchParams(location.search).get('palette')||saved||'blue-dark');
  control.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-palette',b.dataset.archivePalette)}catch{}});
 })();
