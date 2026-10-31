@@ -1,8 +1,10 @@
 /* Burn a repeated watermark into video pixels before upload. No original is published. */
 (() => {
  'use strict';
- // The watermark itself is unchanged: existing marked videos must not be stamped again.
- const TEXT='RAY PAN',VERSION='ray-pan-diagonal-30-v1',MAX_FILE=100*1024*1024;
+ // Keep old burned videos intact; only new originals receive this lighter, sparser version.
+ const TEXT='RAY PAN',VERSION='ray-pan-diagonal-18-half-v2',MAX_FILE=100*1024*1024;
+ const OPACITY=.18,SPACING_SCALE=Math.SQRT2;
+ const isMarked=version=>[VERSION,'ray-pan-diagonal-30-v1'].includes(version);
  function plan(inputBytes,duration){
   if(!Number.isSafeInteger(inputBytes)||inputBytes<1||!Number.isFinite(duration)||duration<=0)throw Error('视频大小或时长无效');
   const sourceRate=inputBytes*8/duration,targetRate=sourceRate*1.03;
@@ -18,11 +20,11 @@
   x.translate(width/2,height/2);x.rotate(-Math.PI/6);
   x.font=`600 ${Math.max(14,36*s)}px Arial, sans-serif`;x.textAlign='center';x.textBaseline='middle';
   x.fillStyle='#fff';x.strokeStyle='#161616';x.lineWidth=Math.max(.6,1.2*s);
-  const dx=Math.max(120,300*s),dy=Math.max(80,180*s);
+  const dx=Math.max(120,300*s)*SPACING_SCALE,dy=Math.max(80,180*s)*SPACING_SCALE;
   for(let row=-Math.ceil(reach/dy);row<=Math.ceil(reach/dy);row++)for(let col=-Math.ceil(reach/dx);col<=Math.ceil(reach/dx);col++){
    const px=col*dx+(row%2)*dx/2,py=row*dy;x.strokeText(TEXT,px,py);x.fillText(TEXT,px,py);
   }
-  const out=document.createElement('canvas');out.width=width;out.height=height;const ox=out.getContext('2d');ox.globalAlpha=.3;ox.drawImage(c,0,0);return out;
+  const out=document.createElement('canvas');out.width=width;out.height=height;const ox=out.getContext('2d');ox.globalAlpha=OPACITY;ox.drawImage(c,0,0);return out;
  }
  async function apply(file,progress=()=>{}){
   if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw Error('当前浏览器不支持视频水印写入，请使用最新版 Chrome / Edge / Safari');
@@ -83,5 +85,5 @@
    document.removeEventListener('visibilitychange',foreground);v.pause();v.removeAttribute('src');v.load();destination?.stream.getTracks().forEach(t=>t.stop());URL.revokeObjectURL(url);await audio.close().catch(()=>{});
   }
  }
- window.VideoWatermark=Object.freeze({apply,layer,plan,version:VERSION});
+ window.VideoWatermark=Object.freeze({apply,layer,plan,isMarked,version:VERSION});
 })();
