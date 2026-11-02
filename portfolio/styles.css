@@ -172,13 +172,19 @@ body:before,#detail-background:after{content:"";position:fixed;inset:0;pointer-e
 .archive-intro,.contact-section>button,.story-first h2,.story-first>p,.about-copy h2{white-space:pre-line}
 img.camera-accent{object-fit:contain}
 @media(max-width:650px){.archive-tools{justify-content:space-between}.archive-palettes{flex-basis:auto}.project-grid:not(.list-view) .project-card:nth-child(n) .project-thumb{aspect-ratio:1!important}}
-/* Selected option C: an opaque reading panel beneath each aligned cover. */
+/* Approved compact caption cards: five columns on desktop, aligned rows. */
 .project-grid:not(.list-view) .project-card{display:flex;flex-direction:column;border-radius:6px;overflow:hidden}
 .project-grid:not(.list-view) .project-card:nth-child(n) .project-thumb{border-radius:0}
-.project-grid:not(.list-view) .project-caption{flex:1;padding:20px 18px 24px;background:color-mix(in srgb,#252525 calc(var(--flow-dark)*100%),#f1f1ee);color:var(--flow-ink);gap:10px}
-.project-grid:not(.list-view) .project-caption h3{font-size:clamp(18px,1.05vw,22px);line-height:1.4;min-height:2.8em;font-weight:650;margin-bottom:9px}
-.project-grid:not(.list-view) .project-subtitle{font-size:13px;line-height:1.6;letter-spacing:.01em;color:var(--flow-muted)}
-.project-grid:not(.list-view) .project-caption .project-summary{font-size:clamp(16px,1vw,18px);line-height:1.75;letter-spacing:0;font-weight:400;color:var(--flow-ink);margin-top:16px}
-.project-grid:not(.list-view) .project-caption>span{font-size:11px;color:var(--flow-muted)}
-@media(max-width:650px){.project-grid:not(.list-view) .project-caption{padding:15px 12px 19px;gap:6px}.project-grid:not(.list-view) .project-caption h3{font-size:16px}.project-grid:not(.list-view) .project-subtitle{font-size:12px}.project-grid:not(.list-view) .project-caption .project-summary{font-size:16px;line-height:1.75;margin-top:13px}.project-grid:not(.list-view) .project-caption>span{font-size:10px}}
+.project-grid:not(.list-view) .project-caption{flex:1;padding:17px 14px 20px;background:color-mix(in srgb,#252525 calc(var(--flow-dark)*100%),#f1f1ee);color:var(--flow-ink);gap:8px}
+.project-grid:not(.list-view) .project-caption h3{font-size:clamp(17px,.95vw,20px);line-height:1.4;min-height:2.8em;font-weight:650;margin-bottom:7px}
+.project-grid:not(.list-view) .project-subtitle{font-size:12px;line-height:1.6;letter-spacing:0;color:var(--flow-muted)}
+.project-grid:not(.list-view) .project-caption .project-summary{font-size:15px;line-height:1.7;min-height:5.1em;letter-spacing:0;font-weight:400;color:var(--flow-ink);margin-top:12px;-webkit-line-clamp:3}
+.project-grid:not(.list-view) .project-caption>span{font-size:10px;color:var(--flow-muted)}
+@media(min-width:1280px){.project-grid:not(.list-view){grid-template-columns:repeat(5,minmax(0,1fr));gap:24px 18px}}
+@media(max-width:650px){.project-grid:not(.list-view) .project-caption{padding:14px 12px 18px;gap:5px;position:relative}.project-grid:not(.list-view) .project-caption h3{font-size:16px}.project-grid:not(.list-view) .project-caption>span{position:absolute;right:12px;bottom:7px;font-size:9px}.project-grid:not(.list-view) .project-caption .project-summary{font-size:14px;line-height:1.7;margin-top:10px}}
 @media(max-width:360px){.project-grid:not(.list-view) .project-caption{padding-left:10px;padding-right:10px}}
+/* A secondary, single-line italic subtitle, fitted to the available reading width. */
+.detail-copy,.detail-right{min-width:0}
+.detail-copy h2{overflow-wrap:anywhere}
+.detail-english{font-family:Arial,"Helvetica Neue","PingFang SC",sans-serif;font-style:italic;font-weight:400;font-size:clamp(20px,1.55vw,28px);line-height:1.45;letter-spacing:0;white-space:nowrap;color:#60676b;margin:12px 0 28px;padding-right:6px}
+@media(max-width:650px){.detail-english{font-size:22px;margin:12px 0 24px}}

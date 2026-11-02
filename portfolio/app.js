@@ -111,9 +111,26 @@ async function updateProjectTheme(p){
  const generation=++themeGeneration;applyTheme(PortfolioColor.theme(PortfolioColor.fallback(p),'configured-fallback'));
  const theme=await PortfolioColor.project(p,profile);if(generation===themeGeneration&&currentProject?.id===p.id&&!closing)applyTheme(theme);
 }
+// Measure the actual italic text so every project subtitle fits on one line.
+function fitDetailEnglish(){
+ const el=$('#detail-english');
+ if(!el.getClientRects().length||!el.textContent)return;
+ el.style.removeProperty('font-size');
+ const size=parseFloat(getComputedStyle(el).fontSize),available=el.clientWidth-6;
+ if(available<=0)return;
+ const range=document.createRange();range.selectNodeContents(el);
+ const width=range.getBoundingClientRect().width;
+ if(width>available)el.style.fontSize=(Math.floor(size*available/width*100)/100)+'px';
+}
+let detailCopyWidth=0;
+new ResizeObserver(entries=>{
+ const width=entries[0].contentRect.width;
+ if(width!==detailCopyWidth){detailCopyWidth=width;fitDetailEnglish();}
+}).observe($('.detail-copy'));
+document.fonts.ready.then(fitDetailEnglish);
 function fillDetail(p){
  currentProject=p;zoomed=false;$('#zoom-image').setAttribute('aria-pressed','false');$('#zoom-image').textContent=copy('zoomIn','放大图片 ＋');$('#zoom-image').hidden=p.kind==='video';
- $('#detail-number').textContent=String(projects.indexOf(p)+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0');$('#detail-type').textContent=type(p)+' / '+copy('detailSelected','SELECTED PROJECT');$('#detail-title').textContent=p.title;$('#detail-english').textContent=p.english;$('#detail-description').textContent=p.description;
+ $('#detail-number').textContent=String(projects.indexOf(p)+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0');$('#detail-type').textContent=type(p)+' / '+copy('detailSelected','SELECTED PROJECT');$('#detail-title').textContent=p.title;$('#detail-english').textContent=p.english;$('#detail-description').textContent=p.description;fitDetailEnglish();
  $('#detail-meta').innerHTML=`<dt>${escapeHTML(copy('metaYear','年份'))}</dt><dd>${escapeHTML(p.year)}</dd><dt>${escapeHTML(copy('metaCategory','类别'))}</dt><dd>${escapeHTML(type(p))}</dd><dt>${escapeHTML(copy('metaRole','参与角色'))}</dt><dd>${escapeHTML(p.role)}</dd>`;$('#detail-note').textContent=p.note||'';
  updateProjectTheme(p);const visual=$('#detail-visual');visual.classList.remove('zoomed');visual.innerHTML=cover(p,'',true)+(p.kind==='video'?'<button class="video-play" aria-label="播放短片"><span>▷</span><small>'+escapeHTML(copy('playVideo','播放短片'))+'</small></button>':'');
  $('#detail-caption').textContent=p.kind==='video'?copy('filmCaption','FILM')+' / '+(p.duration||'VIDEO'):copy('photoCaption','PHOTOGRAPH')+' / '+p.year;
@@ -128,7 +145,7 @@ async function animateShared(p,source,opening=true){
 }
 async function openProject(p,trigger){
  if(!p||currentProject||performance.now()<ignoreClickUntil)return;
- viewerScroll=scrollY;target=offset;velocity=0;dragging=false;modalSource=trigger?.querySelector('.project-thumb,.cover')||trigger;fillDetail(p);const dialog=$('#project-dialog');dialog.classList.remove('is-closing','theme-visible');dialog.showModal();document.body.classList.remove('viewer-closing');document.body.classList.add('viewer-open');requestAnimationFrame(()=>dialog.classList.add('theme-visible'));dialog.scrollTop=0;requestFrame();
+ viewerScroll=scrollY;target=offset;velocity=0;dragging=false;modalSource=trigger?.querySelector('.project-thumb,.cover')||trigger;fillDetail(p);const dialog=$('#project-dialog');dialog.classList.remove('is-closing','theme-visible');dialog.showModal();document.body.classList.remove('viewer-closing');document.body.classList.add('viewer-open');fitDetailEnglish();requestAnimationFrame(()=>dialog.classList.add('theme-visible'));dialog.scrollTop=0;requestFrame();
  if(!reduced.matches)$('.detail-copy').animate([{opacity:0,transform:'translateY(15px)'},{opacity:1,transform:'none'}],{duration:650,easing:'ease-out'});
  await animateShared(p,modalSource,true);$('#close-project').focus({preventScroll:true});
 }
