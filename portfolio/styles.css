@@ -172,3 +172,13 @@ body:before,#detail-background:after{content:"";position:fixed;inset:0;pointer-e
 .archive-intro,.contact-section>button,.story-first h2,.story-first>p,.about-copy h2{white-space:pre-line}
 img.camera-accent{object-fit:contain}
 @media(max-width:650px){.archive-tools{justify-content:space-between}.archive-palettes{flex-basis:auto}.project-grid:not(.list-view) .project-card:nth-child(n) .project-thumb{aspect-ratio:1!important}}
+/* Selected option C: an opaque reading panel beneath each aligned cover. */
+.project-grid:not(.list-view) .project-card{display:flex;flex-direction:column;border-radius:6px;overflow:hidden}
+.project-grid:not(.list-view) .project-card:nth-child(n) .project-thumb{border-radius:0}
+.project-grid:not(.list-view) .project-caption{flex:1;padding:20px 18px 24px;background:color-mix(in srgb,#252525 calc(var(--flow-dark)*100%),#f1f1ee);color:var(--flow-ink);gap:10px}
+.project-grid:not(.list-view) .project-caption h3{font-size:clamp(18px,1.05vw,22px);line-height:1.4;min-height:2.8em;font-weight:650;margin-bottom:9px}
+.project-grid:not(.list-view) .project-subtitle{font-size:13px;line-height:1.6;letter-spacing:.01em;color:var(--flow-muted)}
+.project-grid:not(.list-view) .project-caption .project-summary{font-size:clamp(16px,1vw,18px);line-height:1.75;letter-spacing:0;font-weight:400;color:var(--flow-ink);margin-top:16px}
+.project-grid:not(.list-view) .project-caption>span{font-size:11px;color:var(--flow-muted)}
+@media(max-width:650px){.project-grid:not(.list-view) .project-caption{padding:15px 12px 19px;gap:6px}.project-grid:not(.list-view) .project-caption h3{font-size:16px}.project-grid:not(.list-view) .project-subtitle{font-size:12px}.project-grid:not(.list-view) .project-caption .project-summary{font-size:16px;line-height:1.75;margin-top:13px}.project-grid:not(.list-view) .project-caption>span{font-size:10px}}
+@media(max-width:360px){.project-grid:not(.list-view) .project-caption{padding-left:10px;padding-right:10px}}
