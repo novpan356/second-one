@@ -146,13 +146,27 @@
   view.append(video);figure.insertBefore(view,canvas);figure.style.mixBlendMode='darken';figure.style.aspectRatio=`${config.frameWidth} / ${config.frameHeight}`;scene.classList.add('portrait-baked');
   canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;filter:none';canvas.hidden=true;poster.src=config.poster;
   document.querySelector('#portrait-name').textContent=profile.name;document.querySelector('#portrait-role').textContent=profile.introFocus||profile.role;
+  // Reuse the original per-frame alpha sheets; never recolour the subject.
+  const themed=document.createElement('canvas');themed.className='theme-portrait-surface';themed.setAttribute('aria-hidden','true');figure.append(themed);const themedContext=themed.getContext('2d'),maskCache=new Map();let maskRequest=0;
+  function maskSheet(index){const paths=innerWidth<=650&&config.mobileAtlases?.length?config.mobileAtlases:config.atlases,key=paths[index];if(!key)return Promise.reject(Error('Missing mask'));if(!maskCache.has(key)){const img=new Image();img.src=key;maskCache.set(key,img.decode().then(()=>img).catch(e=>{maskCache.delete(key);throw e}));if(maskCache.size>6)maskCache.delete(maskCache.keys().next().value)}return maskCache.get(key)}
+  async function refreshThemePortrait(){
+   if(document.documentElement.dataset.siteTheme!=='black')return;const token=++maskRequest,index=Math.max(0,drawn),per=config.columns*config.rows;
+   try{const mask=await maskSheet(Math.floor(index/per));if(token!==maskRequest||document.documentElement.dataset.siteTheme!=='black')return;
+    const source=!canvas.hidden?canvas:ready&&video.readyState>=2?video:poster;if(source===poster&&!poster.complete)return;const w=canvas.width||800,h=canvas.height||540;if(themed.width!==w||themed.height!==h){themed.width=w;themed.height=h}themedContext.clearRect(0,0,w,h);themedContext.globalCompositeOperation='source-over';
+    if(source===video)themedContext.drawImage(video,(config.cropX||0)*video.videoWidth/config.sourceWidth,0,config.frameWidth*video.videoWidth/config.sourceWidth,video.videoHeight,0,0,w,h);else themedContext.drawImage(source,0,0,w,h);
+    const slot=index%per,mw=mask.naturalWidth/config.columns,mh=mask.naturalHeight/config.rows;themedContext.globalCompositeOperation='destination-in';themedContext.drawImage(mask,slot%config.columns*mw,Math.floor(slot/config.columns)*mh,mw,mh,0,0,w,h);themedContext.globalCompositeOperation='source-over';
+    if((slot===0||slot===per-1)&&Math.floor(index/per)+1<config.atlases.length)maskSheet(Math.floor(index/per)+1).catch(()=>{});
+   }catch{/* Keep the previous complete masked frame during a slow download. */}
+  }
+  maskSheet(0).catch(()=>{});window.addEventListener('portfolio-theme-change',refreshThemePortrait);poster.addEventListener('load',refreshThemePortrait);
+
   function request(){if(!raf&&!document.hidden)raf=requestAnimationFrame(draw);}
   function freeze(){
    if(holding||!ready||video.readyState<2)return;
    // One snapshot per seek, not per animation frame. It stays visible until the replacement frame is ready.
    context.drawImage(video,(config.cropX||0)*video.videoWidth/config.sourceWidth,0,config.frameWidth*video.videoWidth/config.sourceWidth,video.videoHeight,0,0,canvas.width,canvas.height);holding=true;canvas.hidden=false;
   }
-  function present(time){if(!ready||video.seeking||seekPending&&Math.abs(time-seekTime)>.7/fps)return;drawn=Math.max(0,Math.min(config.frames-1,Math.floor(time*fps+.05)));seekPending=false;holding=false;canvas.hidden=true;poster.hidden=true;view.hidden=false;request();}
+  function present(time){if(!ready||video.seeking||seekPending&&Math.abs(time-seekTime)>.7/fps)return;drawn=Math.max(0,Math.min(config.frames-1,Math.floor(time*fps+.05)));seekPending=false;holding=false;canvas.hidden=true;poster.hidden=true;view.hidden=false;refreshThemePortrait();request();}
   function seek(){
    if(decoderActive){frameDecoder?.seek(frame);return;}
    // A decoded seek must reach the screen before the next target can replace it.
@@ -181,7 +195,7 @@
   const fastSource=sourceURL(config.fastVideo||config.video);
   if(config.frameDecoder&&window.VideoDecoder&&window.Worker){
    decoderActive=true;
-   frameDecoder=createFrameDecoder(fastSource,config,canvas,(index,picture)=>{pendingPicture?.picture.close();pendingPicture={index,picture};if(!pictureRaf)pictureRaf=requestAnimationFrame(()=>{pictureRaf=0;const latest=pendingPicture;pendingPicture=null;context.drawImage(latest.picture,config.cropX||0,0,config.frameWidth,config.frameHeight,0,0,canvas.width,canvas.height);latest.picture.close();drawn=latest.index;ready=true;failed=false;canvas.hidden=false;poster.hidden=true;view.hidden=true;request();});},()=>{decoderActive=false;frameDecoder?.close();cancelAnimationFrame(pictureRaf);pictureRaf=0;pendingPicture?.picture.close();pendingPicture=null;quality='recovering';holding=drawn>=0;video.src=fastSource;});
+   frameDecoder=createFrameDecoder(fastSource,config,canvas,(index,picture)=>{pendingPicture?.picture.close();pendingPicture={index,picture};if(!pictureRaf)pictureRaf=requestAnimationFrame(()=>{pictureRaf=0;const latest=pendingPicture;pendingPicture=null;context.drawImage(latest.picture,config.cropX||0,0,config.frameWidth,config.frameHeight,0,0,canvas.width,canvas.height);latest.picture.close();drawn=latest.index;ready=true;failed=false;canvas.hidden=false;poster.hidden=true;view.hidden=true;refreshThemePortrait();request();});},()=>{decoderActive=false;frameDecoder?.close();cancelAnimationFrame(pictureRaf);pictureRaf=0;pendingPicture?.picture.close();pendingPicture=null;quality='recovering';holding=drawn>=0;video.src=fastSource;});
   }else video.src=fastSource;
   const upgradeTimer=setInterval(async()=>{
    const connection=navigator.connection;

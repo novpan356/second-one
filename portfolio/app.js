@@ -191,17 +191,18 @@ if(!profile.isDemo){const note=document.querySelector('.demo-note');if(note)note
 (()=>{
  const archive=document.querySelector('#archive');if(!archive)return;
  const backdrop=document.createElement('div');backdrop.id='collection-backdrop';backdrop.setAttribute('aria-hidden','true');document.body.prepend(backdrop);
- const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','作品背景，黑白两色');
+ const control=document.createElement('div');control.className='archive-palettes';control.setAttribute('role','group');control.setAttribute('aria-label','全站主题，黑白两色');
  control.innerHTML=['white','black'].map(id=>`<button type="button" data-archive-palette="${id}" aria-pressed="false"><i style="--swatch:${id==="white"?"#fff":"#171717"}" aria-hidden="true"></i><span>${escapeHTML(copy(id==='white'?'paletteWhite':'paletteBlack',id==='white'?'白色':'黑色'))}</span></button>`).join('');document.querySelector('.archive-tools').prepend(control);
- let palette='white',raf=0,mix=0,last=0;const reduceSurface=matchMedia('(prefers-reduced-motion: reduce)');
+ let palette='white',raf=0,mix=document.documentElement.dataset.siteTheme==='black'?1:0,last=0;const reduceSurface=matchMedia('(prefers-reduced-motion: reduce)');
  const smooth=n=>{n=Math.max(0,Math.min(1,n));return n*n*(3-2*n)};
- function paint(now){raf=0;const dt=last?Math.min(.06,(now-last)/1000):1/60;last=now;const target=palette==='black'?1:0;mix=reduceSurface.matches?target:mix+(target-mix)*(1-Math.exp(-12*dt));if(Math.abs(mix-target)<.0001)mix=target;backdrop.style.setProperty('--surface-dark',mix);const rect=archive.getBoundingClientRect(),height=innerHeight,phase=smooth((height-rect.top)/(height*.8))*smooth(rect.bottom/(height*.8));backdrop.style.opacity=String(phase);document.documentElement.style.setProperty('--flow-dark',phase*mix);archive.dataset.backgroundProgress=phase.toFixed(4);if(mix!==target)request();}
+ function paint(now){raf=0;const dt=last?Math.min(.06,(now-last)/1000):1/60;last=now;const target=palette==='black'?1:0;mix=reduceSurface.matches?target:mix+(target-mix)*(1-Math.exp(-12*dt));if(Math.abs(mix-target)<.0001)mix=target;backdrop.style.setProperty('--surface-dark',mix);const rect=archive.getBoundingClientRect(),height=innerHeight,phase=smooth((height-rect.top)/(height*.8))*smooth(rect.bottom/(height*.8));backdrop.style.opacity=String(phase);document.documentElement.style.setProperty('--flow-dark',mix);document.documentElement.style.setProperty('--global-dark',mix);archive.dataset.backgroundProgress=phase.toFixed(4);if(mix!==target)request();}
  function request(){if(!raf)raf=requestAnimationFrame(paint)}
- function select(id){palette=id==='black'?'black':'white';archive.dataset.palette=palette;backdrop.dataset.palette=palette;control.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===palette)));request();}
+ function select(id){palette=id==='black'?'black':'white';archive.dataset.palette=palette;backdrop.dataset.palette=palette;document.documentElement.dataset.siteTheme=palette;document.documentElement.style.colorScheme=palette==='black'?'dark':'light';document.querySelectorAll('[data-archive-palette]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.archivePalette===palette)));document.querySelector('meta[name="theme-color"]')?.setAttribute('content',palette==='black'?'#171717':'#fff');window.dispatchEvent(new CustomEvent('portfolio-theme-change',{detail:palette}));request();}
+ const globalControl=document.createElement('div');globalControl.className='global-theme-controls';globalControl.role='group';globalControl.setAttribute('aria-label','全站主题');globalControl.innerHTML=['white','black'].map(id=>`<button data-archive-palette="${id}" aria-label="切换全站${id==='white'?'浅色':'深色'}主题">${id==='white'?'白':'黑'}</button>`).join('');document.querySelector('body>header').append(globalControl);
  // The redesign starts in white even if an older colourful preference was saved.
  let saved;try{saved=localStorage.getItem('ray-pan-archive-bw')}catch{}
  select(new URLSearchParams(location.search).get('palette')||saved||'white');
- control.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-bw',palette)}catch{}});
+ document.addEventListener('click',e=>{const b=e.target.closest('[data-archive-palette]');if(!b)return;select(b.dataset.archivePalette);try{localStorage.setItem('ray-pan-archive-bw',palette)}catch{}});
  window.addEventListener('scroll',request,{passive:true});window.addEventListener('resize',request);window.addEventListener('load',request);window.addEventListener('portfolio-enter-progress',request);if(window.ResizeObserver)new ResizeObserver(request).observe(archive);request();
 })();
 window.PortfolioContent?.apply(profile);
@@ -234,21 +235,21 @@ if(profile.cameraImage){const image=new Image();image.src=profile.cameraImage;im
  function animate(el,frames,duration,delay=0){if(!el||reduced.matches)return;const a=el.animate(frames,{duration,delay,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'});activeAnimations.push(a);return a}
  async function transition(destination){
   if(busy)return;busy=true;hold=false;hint.hidden=true;
-  const toWall=destination==='wall',overlay=toWall?wall:archive,targetY=top(toWall?hero:archive);
+  const toWall=destination==='wall',returning=toWall&&scrollY>=top(archive)-4,overlay=toWall?wall:archive,targetY=top(toWall?hero:archive);if(returning){animate(archive.querySelector('.archive-top'),[{opacity:1,translate:'0 0'},{opacity:0,translate:'0 20px'}],500);}
   if(toWall){mode='wall';wallSteps=0;speed=1;offsets.splice(0,3,0,80,150)}
   overlay.classList.add('stage-overlay');
   animate(overlay,[{opacity:0},{opacity:1}],680);
-  if(toWall){animate(wall.querySelector('.wall-copy'),[{opacity:0,transform:'translateX(-32px)'},{opacity:1,transform:'none'}],760,80);[...bands.children].forEach((b,i)=>animate(b,[{opacity:0,translate:`0 ${65+i*30}px`},{opacity:1,translate:'0 0'}],850,100+i*80));}
+  if(toWall){animate(wall.querySelector('.wall-copy'),[{opacity:0,transform:'translateX(-32px)'},{opacity:1,transform:'none'}],760,80);[...bands.children].forEach((b,i)=>animate(b,[{opacity:0,translate:`0 ${(returning?-1:1)*(65+i*30)}px`},{opacity:1,translate:'0 0'}],850,100+i*80));}
   else{animate(wall.querySelector('.wall-copy'),[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(-25px)'}],500);animate(bands,[{opacity:1,scale:'1'},{opacity:0,scale:'.97'}],550);animate(archive.querySelector('.archive-top'),[{opacity:0,translate:'0 25px'},{opacity:1,translate:'0 0'}],750,100);archive.querySelectorAll('.project-card').forEach((e,i)=>{if(i<10)animate(e,[{opacity:0,translate:`0 ${35+(i%5)*7}px`},{opacity:1,translate:'0 0'}],650,140+(i%5)*55)});}
   request();
   await new Promise(r=>setTimeout(r,reduced.matches?0:1150));
-  scrollTo({top:targetY,behavior:'instant'});
-  await new Promise(requestAnimationFrame);overlay.classList.remove('stage-overlay');activeAnimations.splice(0).forEach(a=>a.cancel());
+  overlay.classList.remove('stage-overlay');scrollTo({top:targetY,behavior:'instant'});
+  await new Promise(requestAnimationFrame);activeAnimations.splice(0).forEach(a=>a.cancel());
   busy=false;mode=toWall?'wall':'archive';settleUntil=performance.now()+350;request();
  }
  function isWall(){return Math.abs(scrollY-top(hero))<Math.max(8,innerHeight*.25)}
  function ignore(e){return document.documentElement.classList.contains('intro-pending')||currentProject||e.target.closest('input,textarea,select,dialog')}
- function handle(delta,fresh,e){if(ignore(e))return false;if(busy||performance.now()<settleUntil){e.preventDefault();return true}if(delta<=0){hold=false;hint.hidden=true;return false}
+ function handle(delta,fresh,e){if(ignore(e))return false;if(busy||performance.now()<settleUntil){e.preventDefault();return true}if(delta<0){hold=false;hint.hidden=true;const boundary=top(archive);if(scrollY>=boundary-4&&scrollY+delta<=boundary+4){e.preventDefault();if(fresh)transition('wall');return true}return false}if(delta===0)return false
   if(isWall()){
    e.preventDefault();if(Math.abs(scrollY-top(hero))>2)scrollTo({top:top(hero),behavior:'instant'});mode='wall';if(fresh){wallSteps++;if(wallSteps===1){boostUntil=performance.now()+2600;wall.querySelector('.wall-link').textContent='再次下滑 · 全部作品 ↘'}else transition('archive')}return true;
   }
@@ -261,9 +262,10 @@ if(profile.cameraImage){const image=new Image();image.src=profile.cameraImage;im
  window.addEventListener('touchstart',e=>{touchStart=e.touches.length===1?e.touches[0].clientY:null;touchUsed=touchBlocked=false},{passive:true});
  window.addEventListener('touchmove',e=>{if(touchStart===null||e.touches.length!==1)return;if(touchBlocked||busy){e.preventDefault();return}const d=touchStart-e.touches[0].clientY;if(Math.abs(d)<18)return;lastInput=performance.now();if(handle(d,!touchUsed,e))touchBlocked=true;touchUsed=true},{passive:false});
  window.addEventListener('touchend',()=>{touchStart=null;lastInput=performance.now()},{passive:true});
- window.addEventListener('keydown',e=>{if(e.target.closest('button,a,input,textarea,select,dialog'))return;if(['ArrowDown','PageDown',' '].includes(e.key))handle(e.key==='ArrowDown'?50:innerHeight*.8,!e.repeat,e)});
+ window.addEventListener('keydown',e=>{if(e.target.closest('button,a,input,textarea,select,dialog'))return;if(['ArrowDown','PageDown','ArrowUp','PageUp',' '].includes(e.key))handle((e.key==='ArrowUp'||e.key==='PageUp'||e.shiftKey?-1:1)*(e.key==='ArrowDown'||e.key==='ArrowUp'?50:innerHeight*.8),!e.repeat,e)});
  wall.querySelectorAll('a[href="#archive"]').forEach(a=>a.onclick=e=>{e.preventDefault();transition('archive')});
  window.addEventListener('scroll',()=>{
+  if(!busy&&mode==='archive'&&scrollY<top(archive)-4&&scrollY>top(hero)+innerHeight*.3&&performance.now()-lastInput<500){transition('wall');return}
   if(!busy){if(isWall()){if(mode!=='wall')wallSteps=0;mode='wall';hold=false;hint.hidden=true}else if(scrollY<gate()-30){mode='portrait';hold=false;hint.hidden=true}else if(scrollY>=top(archive)-3)mode='archive';
    // Catch momentum that arrives after touch release, before two pages can overlap.
    if(scrollY>gate()+3&&scrollY<top(hero)-3&&performance.now()-lastInput<500){scrollTo({top:gate(),behavior:'instant'});hold=true;hint.hidden=false}}
