@@ -253,7 +253,7 @@ if(profile.cameraImage){const image=new Image();image.src=profile.cameraImage;im
    e.preventDefault();mode='wall';if(fresh){wallSteps++;if(wallSteps===1){boostUntil=performance.now()+2600;wall.querySelector('.wall-link').textContent='再次下滑 · 全部作品 ↘'}else transition('archive')}return true;
   }
   if(scrollY>=top(archive)-3)return false;
-  if(scrollY>=gate()-3){e.preventDefault();transition('wall');return true}
+  if(scrollY>=gate()-3){e.preventDefault();if(fresh)transition('wall');else{hold=true;hint.hidden=false}return true}
   if(scrollY+delta>=gate()&&scrollY<top(hero)){e.preventDefault();scrollTo({top:gate(),behavior:'instant'});hold=true;hint.hidden=false;return true}
   return false;
  }
