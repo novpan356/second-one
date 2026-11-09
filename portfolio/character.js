@@ -111,7 +111,7 @@
   if(Math.abs(targetProgress-progress)<1/(config.frames*16))progress=targetProgress;
   const next=Math.round(clamp(progress/.79)*(config.frames-1)),nextDirection=next===frame?direction:next>frame?1:-1;
   if(nextDirection!==direction){direction=nextDirection;warm(Math.floor(next/per));}frame=next;syncVideo(dt,now);paint();
-  const chapter=Math.min(3,Math.floor(clamp((progress-.035)/.82)*4)),t=clamp((progress-.035-chapter*.205)/.205),alpha=ease(t/.18)*(1-ease((t-.82)/.18))*(1-ease((progress-.82)/.07));
+  const chapter=Math.min(3,Math.floor(clamp((progress-.035)/.82)*4)),t=clamp((progress-.035-chapter*.205)/.205),alpha=c===3?ease(t/.18)*(1-ease((progress-.86)/.1)):ease(t/.18)*(1-ease((t-.82)/.18));
   if(chapter!==lastChapter){document.querySelector('#portrait-chapter-title').textContent=chapters[chapter][0];document.querySelector('#portrait-chapter-text').textContent=chapters[chapter][1];document.querySelector('#portrait-chapter-skill').textContent=window.PortfolioContent?.get(profile,'characterSkill'+(chapter+1),chapters[chapter][2])??chapters[chapter][2];count.textContent=String(chapter+1).padStart(2,'0')+' / 04';lastChapter=chapter;}
   left.style.opacity=right.style.opacity=String(alpha);right.style.pointerEvents=alpha>.1?'auto':'none';left.style.transform=`translate3d(0,${reduced.matches?0:(42-t*84)*(innerWidth<=650?.25:1)}px,0)`;right.style.transform=`translate3d(0,${reduced.matches?0:(30-t*60)*(innerWidth<=650?.25:1)}px,0)`;
   const exit=ease((progress-.86)/.14);figure.style.opacity=String(1-exit);figure.style.transform=`translate3d(-50%,0,0) scale(${1-exit*.12})`;scene.style.setProperty('--portrait-progress',progress);meter.style.transform=`scaleX(${progress})`;scene.classList.toggle('portrait-complete',progress>.9);
@@ -166,7 +166,7 @@
    raf=0;const dt=lastTimestamp?Math.min(.04,(now-lastTimestamp)/1000):1/60;lastTimestamp=now;target=clamp((scrollY-top)/range);
    progress=reduce.matches?target:progress+(target-progress)*(1-Math.exp(-26*dt));if(Math.abs(progress-target)<.00015)progress=target;
    frame=Math.round(clamp(progress/.79)*(config.frames-1));seek();
-   const c=Math.min(3,Math.floor(clamp((progress-.035)/.82)*4)),t=clamp((progress-.035-c*.205)/.205),alpha=ease(t/.18)*(1-ease((t-.82)/.18))*(1-ease((progress-.82)/.07));
+   const c=Math.min(3,Math.floor(clamp((progress-.035)/.82)*4)),t=clamp((progress-.035-c*.205)/.205),alpha=c===3?ease(t/.18)*(1-ease((progress-.86)/.1)):ease(t/.18)*(1-ease((t-.82)/.18));
    if(c!==chapter){document.querySelector('#portrait-chapter-title').textContent=chapters[c][0]||'';document.querySelector('#portrait-chapter-text').textContent=chapters[c][1]||'';document.querySelector('#portrait-chapter-skill').textContent=window.PortfolioContent?.get(profile,'characterSkill'+(c+1),chapters[c][2])??chapters[c][2];document.querySelector('#portrait-step').textContent=String(c+1).padStart(2,'0')+' / 04';chapter=c;}
    left.style.opacity=right.style.opacity=String(alpha);right.style.pointerEvents=alpha>.1?'auto':'none';left.style.transform=`translate3d(0,${reduce.matches?0:(42-t*84)*(innerWidth<=650?.25:1)}px,0)`;right.style.transform=`translate3d(0,${reduce.matches?0:(30-t*60)*(innerWidth<=650?.25:1)}px,0)`;
    const exit=ease((progress-.86)/.14);figure.style.opacity=String(1-exit);figure.style.transform=`translate3d(-50%,0,0) scale(${1-exit*.12})`;document.querySelector('.portrait-progress i').style.transform=`scaleX(${progress})`;scene.classList.toggle('portrait-complete',progress>.9);
