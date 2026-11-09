@@ -150,8 +150,8 @@
   const themed=document.createElement('canvas');themed.className='theme-portrait-surface';themed.setAttribute('aria-hidden','true');figure.append(themed);const themedContext=themed.getContext('2d'),maskCache=new Map();let maskRequest=0;
   function maskSheet(index){const paths=innerWidth<=650&&config.mobileAtlases?.length?config.mobileAtlases:config.atlases,key=paths[index];if(!key)return Promise.reject(Error('Missing mask'));if(!maskCache.has(key)){const img=new Image();img.src=key;maskCache.set(key,img.decode().then(()=>img).catch(e=>{maskCache.delete(key);throw e}));if(maskCache.size>6)maskCache.delete(maskCache.keys().next().value)}return maskCache.get(key)}
   async function refreshThemePortrait(){
-   if(document.documentElement.dataset.siteTheme!=='black')return;const token=++maskRequest,index=Math.max(0,drawn),per=config.columns*config.rows;
-   try{const mask=await maskSheet(Math.floor(index/per));if(token!==maskRequest||document.documentElement.dataset.siteTheme!=='black')return;
+   const token=++maskRequest,index=Math.max(0,drawn),per=config.columns*config.rows;
+   try{const mask=await maskSheet(Math.floor(index/per));if(token!==maskRequest)return;
     const source=!canvas.hidden?canvas:ready&&video.readyState>=2?video:poster;if(source===poster&&!poster.complete)return;const w=canvas.width||800,h=canvas.height||540;if(themed.width!==w||themed.height!==h){themed.width=w;themed.height=h}themedContext.clearRect(0,0,w,h);themedContext.globalCompositeOperation='source-over';
     if(source===video)themedContext.drawImage(video,(config.cropX||0)*video.videoWidth/config.sourceWidth,0,config.frameWidth*video.videoWidth/config.sourceWidth,video.videoHeight,0,0,w,h);else themedContext.drawImage(source,0,0,w,h);
     const slot=index%per,mw=mask.naturalWidth/config.columns,mh=mask.naturalHeight/config.rows;themedContext.globalCompositeOperation='destination-in';themedContext.drawImage(mask,slot%config.columns*mw,Math.floor(slot/config.columns)*mh,mw,mh,0,0,w,h);themedContext.globalCompositeOperation='source-over';

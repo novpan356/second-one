@@ -237,3 +237,9 @@ body,.character-story,.editorial-redesign .hero,.editorial-redesign .archive.sta
 :root[data-site-theme=black] .theme-portrait-surface{display:block}
 
 :root[data-site-theme=black] .portrait-model-space{mix-blend-mode:normal}
+
+/* Stage portals live directly under body, outside section stacking contexts. */
+body>.stage-overlay{isolation:isolate;opacity:1!important;pointer-events:auto}
+.editorial-redesign .portrait-model-space,.editorial-redesign .portrait-figure{mix-blend-mode:normal!important}
+.portrait-baked .portrait-video-view,.portrait-baked #character-canvas,.portrait-baked #character-poster{opacity:0!important}
+.portrait-baked .theme-portrait-surface{display:block;filter:none}
