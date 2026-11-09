@@ -216,3 +216,5 @@ img.camera-accent{object-fit:contain}
 .editorial-redesign .archive.stage-overlay{background:#fff;overflow:hidden}
 .editorial-redesign .archive{scroll-margin-top:0}
 .editorial-redesign .wall-copy{will-change:opacity,transform}
+
+.editorial-redesign{overflow-anchor:none}

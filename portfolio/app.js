@@ -246,11 +246,11 @@ if(profile.cameraImage){const image=new Image();image.src=profile.cameraImage;im
   await new Promise(requestAnimationFrame);overlay.classList.remove('stage-overlay');activeAnimations.splice(0).forEach(a=>a.cancel());
   busy=false;mode=toWall?'wall':'archive';settleUntil=performance.now()+350;request();
  }
- function isWall(){return Math.abs(scrollY-top(hero))<5}
+ function isWall(){return Math.abs(scrollY-top(hero))<Math.max(8,innerHeight*.25)}
  function ignore(e){return document.documentElement.classList.contains('intro-pending')||currentProject||e.target.closest('input,textarea,select,dialog')}
  function handle(delta,fresh,e){if(ignore(e))return false;if(busy||performance.now()<settleUntil){e.preventDefault();return true}if(delta<=0){hold=false;hint.hidden=true;return false}
   if(isWall()){
-   e.preventDefault();mode='wall';if(fresh){wallSteps++;if(wallSteps===1){boostUntil=performance.now()+2600;wall.querySelector('.wall-link').textContent='再次下滑 · 全部作品 ↘'}else transition('archive')}return true;
+   e.preventDefault();if(Math.abs(scrollY-top(hero))>2)scrollTo({top:top(hero),behavior:'instant'});mode='wall';if(fresh){wallSteps++;if(wallSteps===1){boostUntil=performance.now()+2600;wall.querySelector('.wall-link').textContent='再次下滑 · 全部作品 ↘'}else transition('archive')}return true;
   }
   if(scrollY>=top(archive)-3)return false;
   if(scrollY>=gate()-3){e.preventDefault();if(fresh)transition('wall');else{hold=true;hint.hidden=false}return true}
