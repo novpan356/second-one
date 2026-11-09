@@ -69,4 +69,4 @@ function renderCaseEditor(){
   body.append(select,button('添加拆解项目',()=>{if(select.value)c.projects.push({projectId:select.value,challenge:'',approach:'',result:''})}));group.append(body);box.append(group);
  });
 }
-$('#add-case-category').onclick=()=>{if(busy)return;if(model.caseCategories.length>=30){say('最多支持30个类别');return}model.caseCategories.push({id:'category-'+crypto.randomUUID(),name:'新类型',enabled:true,projects:[]});changed();renderCaseEditor()};
+if($('#add-case-category'))$('#add-case-category').onclick=()=>{if(busy)return;if(model.caseCategories.length>=30){say('最多支持30个类别');return}model.caseCategories.push({id:'category-'+crypto.randomUUID(),name:'新类型',enabled:true,projects:[]});changed();renderCaseEditor()};

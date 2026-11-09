@@ -206,3 +206,13 @@ img.camera-accent{object-fit:contain}
 @media(max-width:900px){.wall-copy h2{font-size:clamp(34px,5.8vw,58px)}.wall-copy{padding-right:7%}.wall-pin{padding:0 4%}.wall-caption{font-size:10px;left:8px;bottom:12px}.wall-play{bottom:11px}.wall-card,.wall-color{border-radius:12px}.wall-bands,.wall-band{gap:8px}.case-content{gap:5%}}
 @media(max-width:650px){.editorial-redesign body>header{top:10px;height:58px;padding:0 16px;border-radius:16px}.editorial-redesign body>header .brand{font-size:22px}.editorial-redesign .hero{height:175svh}.wall-pin{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding:90px 5% 0;gap:24px}.wall-copy{padding:0;align-self:start}.wall-copy .eyebrow{font-size:9px;margin:0 0 10px}.wall-copy h2{font-size:38px;white-space:normal;line-height:1.1;margin:0 0 12px}.wall-copy>p:not(.eyebrow){font-size:13px;display:inline;margin-right:5px}.wall-copy>a{font-size:12px;padding:9px 12px;margin-top:14px}.wall-bands{height:100%;min-height:0}.wall-caption{left:7px;right:18px;font-size:10px;bottom:10px}.wall-play{font-size:12px;right:6px;bottom:9px}.wall-band:nth-child(3){margin-top:-45px}.wall-color{aspect-ratio:.8}.editorial-redesign .story-track{padding:65px 6%}.case-heading h2{font-size:34px}.case-heading>p:last-child{font-size:14px;line-height:1.7}.case-tabs{gap:8px}.case-tabs button{padding:10px 14px;font-size:14px}.case-content{grid-template-columns:1fr;gap:25px;min-height:300px}.case-media{grid-row:1;aspect-ratio:1.4}.case-reading section p{font-size:15px}.case-picker{flex-wrap:nowrap;overflow:auto}.case-picker button{flex-shrink:0;max-width:85%;text-align:left}.portrait-continue{font-size:12px;bottom:55px;padding:10px 14px}}
 @media(prefers-reduced-motion:reduce){.wall-band,.wall-pin,.case-section{will-change:auto}.wall-card:hover img{transform:none}}
+
+/* One complete screen per stage; remove the legacy portrait/gallery overlap. */
+.editorial-redesign .character-story{margin-bottom:0}
+.editorial-redesign .hero{height:100svh;min-height:0;scroll-margin-top:0}
+.editorial-redesign .wall-pin{height:100svh;position:relative;top:auto;opacity:1;transform:none}
+.editorial-redesign #story{display:none!important}
+.editorial-redesign .wall-pin.stage-overlay,.editorial-redesign .archive.stage-overlay{position:fixed;inset:0;top:0;height:100svh;width:100%;margin:0;z-index:24;overflow:hidden;background:var(--paper)}
+.editorial-redesign .archive.stage-overlay{background:#fff;overflow:hidden}
+.editorial-redesign .archive{scroll-margin-top:0}
+.editorial-redesign .wall-copy{will-change:opacity,transform}
